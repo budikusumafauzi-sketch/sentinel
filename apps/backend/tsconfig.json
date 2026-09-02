@@ -4,7 +4,7 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "outDir": "./dist",
-    "rootDir": ".",
+    "baseUrl": "./",
     "target": "ES2022",
     "declaration": true,
     "removeComments": true,
