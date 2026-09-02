@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "Sentinel",
+    "slug": "sentinel",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "sentinel",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "platforms": ["android", "ios"],
+    "android": {
+      "package": "com.sentinel.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#0A0A0F"
+      }
+    },
+    "ios": {
+      "bundleIdentifier": "com.sentinel.app",
+      "supportsTablet": true
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": ["expo-router"]
+  }
+}

@@ -1,0 +1,9 @@
+node_modules/
+dist/
+build/
+.turbo/
+.expo/
+coverage/
+pnpm-lock.yaml
+*.tsbuildinfo
+SENTINEL_PRD_v1.0.md
