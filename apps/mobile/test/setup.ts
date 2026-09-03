@@ -1,5 +1,8 @@
 import type React from 'react';
 
+// Define global __DEV__ for test environment
+(globalThis as any).__DEV__ = true;
+
 // Mock react-native for Node test environment
 const mockRN = {
   Platform: {
@@ -82,3 +85,10 @@ jest.mock('expo-status-bar', () => {
     StatusBar: (props: Record<string, unknown>) => ReactModule.createElement('StatusBar', props),
   };
 });
+
+// Mock expo-modules-core
+jest.mock('expo-modules-core', () => ({
+  requireOptionalNativeModule: jest.fn(() => null),
+  requireNativeModule: jest.fn(() => null),
+}));
+

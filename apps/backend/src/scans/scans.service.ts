@@ -46,4 +46,39 @@ export class ScansService {
     }
     return scan;
   }
+
+  async syncEvidence(id: string, userId: string, dto: import('./dto').SyncEvidenceDto) {
+    const scan = await this.findOneByUser(id, userId);
+
+    // Update device metadata if provided
+    if (dto.deviceInfo) {
+      await this.prisma.device.update({
+        where: { id: scan.deviceId },
+        data: {
+          lastSeenAt: new Date(),
+          ...(dto.deviceInfo.model ? { model: dto.deviceInfo.model } : {}),
+          ...(dto.deviceInfo.manufacturer ? { manufacturer: dto.deviceInfo.manufacturer } : {}),
+          ...(dto.deviceInfo.osVersion ? { osVersion: dto.deviceInfo.osVersion } : {}),
+        },
+      });
+    } else {
+      await this.prisma.device.update({
+        where: { id: scan.deviceId },
+        data: { lastSeenAt: new Date() },
+      });
+    }
+
+    return this.prisma.scan.update({
+      where: { id },
+      data: {
+        status: 'COMPLETED',
+        completedAt: new Date(),
+        summary: dto.summary ?? `Device inspection completed with ${dto.rawEvidence?.length ?? 0} evidence items`,
+        rawEvidence: dto.rawEvidence as any,
+        capabilities: dto.capabilities as any,
+      },
+      include: { device: true, findings: true },
+    });
+  }
 }
+

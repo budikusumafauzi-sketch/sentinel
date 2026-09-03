@@ -1,0 +1,8 @@
+{
+  "name": "sentinel-device-intelligence",
+  "version": "0.1.0",
+  "description": "Sentinel device intelligence native module for Android and iOS",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {}
+}

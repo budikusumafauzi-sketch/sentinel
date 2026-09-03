@@ -1,9 +1,9 @@
 import { Platform } from 'react-native';
-import type { ApiResponse, AuthResponse, CreateDeviceInput, CreateScanInput } from '@sentinel/types';
+import type { ApiResponse, AuthResponse, CreateDeviceInput, CreateScanInput, SyncEvidenceInput } from '@sentinel/types';
 
 // Android emulator uses 10.0.2.2 to reach host; iOS simulator uses localhost
 const getBaseUrl = (): string => {
-  if (__DEV__) {
+  if (typeof __DEV__ !== 'undefined' && __DEV__) {
     if (Platform.OS === 'android') {
       return 'http://10.0.2.2:3000/api/v1';
     }
@@ -100,6 +100,13 @@ class ApiClient {
   // ── Scans ───────────────────────────────
   async createScan(input: CreateScanInput) {
     return this.request<any>('/scans', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async syncScanEvidence(scanId: string, input: SyncEvidenceInput) {
+    return this.request<any>(`/scans/${scanId}/evidence`, {
       method: 'POST',
       body: JSON.stringify(input),
     });

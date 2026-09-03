@@ -129,6 +129,8 @@ model Scan {
   startedAt   DateTime?  @map("started_at")
   completedAt DateTime?  @map("completed_at")
   summary     String?
+  rawEvidence Json?      @map("raw_evidence")
+  capabilities Json?     @map("capabilities")
   createdAt   DateTime   @default(now()) @map("created_at")
   updatedAt   DateTime   @updatedAt @map("updated_at")
 

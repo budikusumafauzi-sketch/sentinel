@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { colors, severityColors } from '../../src/design-system/colors';
 import { spacing } from '../../src/design-system/spacing';
 import { radius } from '../../src/design-system/radius';
@@ -11,45 +11,45 @@ import { Icon } from '../../src/components/common/Icon';
 import { PrimaryButton, SecondaryButton } from '../../src/components/common/Button';
 import { ScanTypeSelector, type ScanType } from '../../src/components/scan/ScanTypeSelector';
 import { ScanProgressView } from '../../src/components/scan/ScanProgressView';
-import { FullReportView } from '../../src/components/security/FullReportView';
-import {
-  mockScanStages,
-  mockFindingsSummary,
-  mockCategories,
-  mockFullReport,
-} from '../../src/mock/securityData';
+import { deviceScanner, type ScanStageProgress } from '../../src/services/deviceScanner';
+import type { DeviceInspectionResult } from '@sentinel/types';
 import type { ScanProgress } from '../../src/types/security';
 
-type ScanScreenState = 'idle' | 'scanning' | 'result' | 'report';
+type ScanScreenState = 'idle' | 'scanning' | 'result' | 'report' | 'error';
+
+const SCAN_STAGES = [
+  { id: '1', name: 'Device Baseline', detail: 'Detecting manufacturer, model, OS version and hardware baseline', status: 'pending' as const },
+  { id: '2', name: 'Operating System & Security', detail: 'Inspecting keyguard, encryption, developer settings and security patch', status: 'pending' as const },
+  { id: '3', name: 'Application & Permissions', detail: 'Discovering visible packages and permission declarations within platform limits', status: 'pending' as const },
+  { id: '4', name: 'Network & Connectivity', detail: 'Checking network status, transports, and active VPN detection', status: 'pending' as const },
+  { id: '5', name: 'Capabilities & Synchronization', detail: 'Normalizing evidence provenance and synchronizing with backend', status: 'pending' as const },
+];
 
 export default function ScanScreen() {
   const [screenState, setScreenState] = useState<ScanScreenState>('idle');
   const [scanType, setScanType] = useState<ScanType>('full');
   const [progressVal, setProgressVal] = useState(0);
+  const [currentStageText, setCurrentStageText] = useState('Initializing scan...');
+  const [inspectionResult, setInspectionResult] = useState<DeviceInspectionResult | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Mock scan timer simulation for UX demonstration
-  useEffect(() => {
-    let timer: ReturnType<typeof setInterval>;
-    if (screenState === 'scanning') {
-      timer = setInterval(() => {
-        setProgressVal((prev) => {
-          if (prev >= 100) {
-            clearInterval(timer);
-            setScreenState('result');
-            return 100;
-          }
-          return prev + 20;
-        });
-      }, 400);
-    }
-    return () => {
-      if (timer) clearInterval(timer);
-    };
-  }, [screenState]);
-
-  const handleStartScan = () => {
+  const handleStartScan = async () => {
     setProgressVal(0);
+    setCurrentStageText('Initializing device inspection...');
     setScreenState('scanning');
+    setErrorMessage(null);
+
+    try {
+      const result = await deviceScanner.runScan((prog: ScanStageProgress) => {
+        setProgressVal(prog.progress);
+        setCurrentStageText(prog.stage);
+      });
+      setInspectionResult(result);
+      setScreenState('result');
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Inspection failed');
+      setScreenState('error');
+    }
   };
 
   const handleCancelScan = () => {
@@ -59,32 +59,89 @@ export default function ScanScreen() {
 
   const currentScanProgress: ScanProgress = {
     progress: progressVal,
-    currentStage:
-      progressVal < 30
-        ? 'Detecting device & hardware baseline...'
-        : progressVal < 60
-          ? 'Checking operating system & kernel...'
-          : progressVal < 90
-            ? 'Inspecting applications & signatures...'
-            : 'Evaluating security policies & risk score...',
-    stages: mockScanStages.map((stage, idx) => {
-      const stageThreshold = (idx + 1) * 14;
+    currentStage: currentStageText,
+    stages: SCAN_STAGES.map((stage, idx) => {
+      const stageThreshold = (idx + 1) * 20;
       if (progressVal >= stageThreshold) {
-        return { ...stage, status: 'completed' };
-      } else if (progressVal >= stageThreshold - 14) {
-        return { ...stage, status: 'in_progress' };
+        return { ...stage, status: 'completed' as const };
+      } else if (progressVal >= stageThreshold - 20) {
+        return { ...stage, status: 'in_progress' as const };
       }
-      return { ...stage, status: 'pending' };
+      return { ...stage, status: 'pending' as const };
     }),
-    checksCompleted: Math.min(Math.floor((progressVal / 100) * 147), 147),
-    totalChecks: 147,
+    checksCompleted: inspectionResult?.rawEvidence.length || Math.min(Math.floor((progressVal / 100) * 12), 12),
+    totalChecks: 12,
     isScanning: screenState === 'scanning',
   };
 
-  if (screenState === 'report') {
+  if (screenState === 'error') {
     return (
       <ScreenContainer>
-        <FullReportView report={mockFullReport} onBack={() => setScreenState('result')} />
+        <ScreenHeader title="Scan Failed" subtitle="Device inspection encountered an error" />
+        <Card variant="elevated" padding="lg" style={styles.resultCard}>
+          <View style={[styles.successIconCircle, { borderColor: '#FCA5A5', backgroundColor: '#FEE2E2' }]}>
+            <Icon name="alert-triangle" size={36} color="#DC2626" />
+          </View>
+          <Text style={styles.resultTitle}>Inspection Interrupted</Text>
+          <Text style={styles.resultSubtitle}>{errorMessage || 'An unexpected platform error occurred.'}</Text>
+          <PrimaryButton
+            title="Retry Scan"
+            onPress={handleStartScan}
+            icon="refresh"
+            size="md"
+            style={styles.actionBtn}
+          />
+          <SecondaryButton
+            title="Return to Scan Screen"
+            onPress={() => setScreenState('idle')}
+            size="md"
+            style={styles.actionBtnSecondary}
+          />
+        </Card>
+      </ScreenContainer>
+    );
+  }
+
+  if (screenState === 'report' && inspectionResult) {
+    return (
+      <ScreenContainer>
+        <ScreenHeader
+          title="Evidence Provenance Report"
+          subtitle={`${inspectionResult.rawEvidence.length} signals recorded with data trust verification`}
+        />
+        <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+          {inspectionResult.rawEvidence.map((item, idx) => (
+            <Card key={idx} variant="outlined" padding="md" style={styles.evidenceCard}>
+              <View style={styles.evidenceHeader}>
+                <Text style={styles.evidenceName}>{item.checkName}</Text>
+                <View
+                  style={[
+                    styles.trustBadge,
+                    item.trustState === 'VERIFIED'
+                      ? styles.trustVerified
+                      : item.trustState === 'PERMISSION_REQUIRED'
+                        ? styles.trustPermReq
+                        : styles.trustUnavailable,
+                  ]}
+                >
+                  <Text style={styles.trustBadgeText}>{item.trustState}</Text>
+                </View>
+              </View>
+              <Text style={styles.evidenceSource}>API Source: {item.source}</Text>
+              <Text style={styles.evidenceValue}>
+                Value: {typeof item.value === 'object' ? JSON.stringify(item.value) : String(item.value)}
+              </Text>
+              {item.notes ? <Text style={styles.evidenceNotes}>Limitation: {item.notes}</Text> : null}
+            </Card>
+          ))}
+          <PrimaryButton
+            title="Back to Summary"
+            onPress={() => setScreenState('result')}
+            icon="chevron-left"
+            size="md"
+            style={styles.actionBtn}
+          />
+        </ScrollView>
       </ScreenContainer>
     );
   }
@@ -92,78 +149,122 @@ export default function ScanScreen() {
   if (screenState === 'scanning') {
     return (
       <ScreenContainer>
-        <ScreenHeader title="Security Scan" />
+        <ScreenHeader title="Security Inspection" subtitle="Collecting real device evidence" />
         <ScanProgressView scanProgress={currentScanProgress} onCancel={handleCancelScan} />
       </ScreenContainer>
     );
   }
 
-  if (screenState === 'result') {
+  if (screenState === 'result' && inspectionResult) {
+    const verifiedCount = inspectionResult.rawEvidence.filter((e) => e.trustState === 'VERIFIED').length;
+    const permReqCount = inspectionResult.rawEvidence.filter((e) => e.trustState === 'PERMISSION_REQUIRED').length;
+    const partialCount = inspectionResult.rawEvidence.filter((e) => e.capabilityStatus === 'PARTIALLY_SUPPORTED').length;
+    const unavailCount = inspectionResult.rawEvidence.filter(
+      (e) => e.trustState === 'NOT_AVAILABLE' || e.trustState === 'UNABLE_TO_VERIFY',
+    ).length;
+
     return (
       <ScreenContainer>
-        <ScreenHeader title="Scan Completed" />
+        <ScreenHeader title="Inspection Completed" subtitle="Device intelligence recorded truthfully" />
 
         {/* Result Card */}
         <Card variant="elevated" padding="lg" style={styles.resultCard}>
           <View style={styles.successIconCircle}>
             <Icon name="check" size={36} color={colors.secureDark} />
           </View>
-          <Text style={styles.resultTitle}>Scan Finished Successfully</Text>
-          <Text style={styles.resultSubtitle}>147 checks evaluated across 6 categories</Text>
+          <Text style={styles.resultTitle}>
+            {inspectionResult.applicationDiscovery.status === 'partially_discoverable'
+              ? 'Completed with Platform Limits'
+              : 'Scan Finished Successfully'}
+          </Text>
+          <Text style={styles.resultSubtitle}>
+            {inspectionResult.deviceInfo.manufacturer} {inspectionResult.deviceInfo.model} · Android {inspectionResult.deviceInfo.osVersion}
+          </Text>
 
-          {/* Severity Counters Row */}
+          {/* Provenance Counters Row */}
           <View style={styles.severityRow}>
             <View style={styles.severityItem}>
-              <Text style={[styles.severityCount, { color: severityColors.critical.dark }]}>
-                {mockFindingsSummary.critical}
-              </Text>
-              <Text style={styles.severityLabel}>Critical</Text>
+              <Text style={[styles.severityCount, { color: colors.secureDark }]}>{verifiedCount}</Text>
+              <Text style={styles.severityLabel}>Verified</Text>
             </View>
             <View style={styles.severityItem}>
-              <Text style={[styles.severityCount, { color: severityColors.high.dark }]}>
-                {mockFindingsSummary.high}
-              </Text>
-              <Text style={styles.severityLabel}>High</Text>
+              <Text style={[styles.severityCount, { color: severityColors.medium.dark }]}>{partialCount}</Text>
+              <Text style={styles.severityLabel}>Partial</Text>
             </View>
             <View style={styles.severityItem}>
-              <Text style={[styles.severityCount, { color: severityColors.medium.dark }]}>
-                {mockFindingsSummary.medium}
-              </Text>
-              <Text style={styles.severityLabel}>Medium</Text>
+              <Text style={[styles.severityCount, { color: severityColors.high.dark }]}>{permReqCount}</Text>
+              <Text style={styles.severityLabel}>Perm Req</Text>
             </View>
             <View style={styles.severityItem}>
-              <Text style={[styles.severityCount, { color: severityColors.low.dark }]}>
-                {mockFindingsSummary.low}
-              </Text>
-              <Text style={styles.severityLabel}>Low</Text>
+              <Text style={[styles.severityCount, { color: colors.textMuted }]}>{unavailCount}</Text>
+              <Text style={styles.severityLabel}>Unavailable</Text>
             </View>
           </View>
         </Card>
 
         {/* Categories Checks List */}
         <View style={styles.checksListContainer}>
-          <Text style={styles.sectionTitle}>Category Check Summary</Text>
-          {mockCategories.map((cat) => (
-            <View key={cat.id} style={styles.categoryRow}>
-              <View style={styles.catLeft}>
-                <Icon name={cat.icon} size={18} color={colors.primary} />
-                <Text style={styles.catName}>{cat.name}</Text>
-              </View>
-              <Text style={styles.catChecks}>{cat.checksCount} checks evaluated</Text>
+          <Text style={styles.sectionTitle}>Verified Signal Summary</Text>
+
+          <View style={styles.categoryRow}>
+            <View style={styles.catLeft}>
+              <Icon name="shield" size={18} color={colors.primary} />
+              <Text style={styles.catName}>Operating System</Text>
             </View>
-          ))}
+            <Text style={styles.catChecks}>
+              Android {inspectionResult.deviceInfo.osVersion} ({inspectionResult.deviceInfo.securityPatch || 'Patch unexposed'})
+            </Text>
+          </View>
+
+          <View style={styles.categoryRow}>
+            <View style={styles.catLeft}>
+              <Icon name="lock" size={18} color={colors.primary} />
+              <Text style={styles.catName}>Screen Lock & Storage</Text>
+            </View>
+            <Text style={styles.catChecks}>
+              {inspectionResult.systemSignals['security.screen_lock']?.value ? 'PIN/Pattern Set' : 'No Lock'} · {String(inspectionResult.systemSignals['security.storage_encryption']?.value || 'Encrypted')}
+            </Text>
+          </View>
+
+          <View style={styles.categoryRow}>
+            <View style={styles.catLeft}>
+              <Icon name="grid" size={18} color={colors.primary} />
+              <Text style={styles.catName}>Applications & Packages</Text>
+            </View>
+            <Text style={styles.catChecks}>
+              {inspectionResult.applicationDiscovery.totalDiscovered} Discovered (Filtered by OS)
+            </Text>
+          </View>
+
+          <View style={styles.categoryRow}>
+            <View style={styles.catLeft}>
+              <Icon name="wifi" size={18} color={colors.primary} />
+              <Text style={styles.catName}>Network & Transport</Text>
+            </View>
+            <Text style={styles.catChecks}>
+              {(inspectionResult.networkSignals['network.connectivity']?.value as any)?.isConnected ? 'Connected' : 'Offline'} · VPN: {inspectionResult.networkSignals['network.vpn_transport']?.value ? 'Active' : 'Inactive'}
+            </Text>
+          </View>
+
+          <View style={styles.categoryRow}>
+            <View style={styles.catLeft}>
+              <Icon name="alert-circle" size={18} color={colors.textMuted} />
+              <Text style={styles.catName}>Wi-Fi Network SSID</Text>
+            </View>
+            <Text style={styles.catChecks}>Requires Location Perm</Text>
+          </View>
         </View>
 
         {/* Actions */}
         <PrimaryButton
-          title="View Full Detailed Report"
+          title="View Evidence Provenance Report"
           onPress={() => setScreenState('report')}
           icon="file-text"
           size="lg"
           style={styles.actionBtn}
         />
         <SecondaryButton
-          title="Perform Another Scan"
+          title="Perform Another Inspection"
           onPress={() => setScreenState('idle')}
           icon="refresh"
           size="md"
@@ -183,11 +284,11 @@ export default function ScanScreen() {
       {/* Device Overview Card */}
       <Card variant="outlined" padding="md" style={styles.deviceBanner}>
         <View style={styles.deviceIconCircle}>
-          <Icon name="laptop" size={20} color={colors.primary} />
+          <Icon name="smartphone" size={20} color={colors.primary} />
         </View>
         <View style={styles.deviceInfo}>
-          <Text style={styles.deviceName}>Current Workstation (Sentinel Client)</Text>
-          <Text style={styles.deviceMeta}>Last scanned today at 22:25 · 147 baseline checks</Text>
+          <Text style={styles.deviceName}>Local Device (Sentinel Client)</Text>
+          <Text style={styles.deviceMeta}>Automatic native inspection · Read-only</Text>
         </View>
       </Card>
 
@@ -197,7 +298,7 @@ export default function ScanScreen() {
 
       {/* Start Button */}
       <PrimaryButton
-        title={scanType === 'quick' ? 'Start Quick Scan (~5s)' : 'Start Full Deep Scan (~15s)'}
+        title={scanType === 'quick' ? 'Start Quick Scan (~2s)' : 'Start Full Device Inspection (~5s)'}
         onPress={handleStartScan}
         icon="scan"
         size="lg"
@@ -207,8 +308,7 @@ export default function ScanScreen() {
       {/* Transparency Note */}
       <View style={styles.transparencyBox}>
         <Text style={styles.transparencyText}>
-          Sentinel checks only authorized OS configurations and application signals. System files
-          and private contents are never altered or transferred.
+          Sentinel inspects only authorized OS configurations and application signals. Private messages, photos, files, and credentials are never accessed, altered, or transferred.
         </Text>
       </View>
     </ScreenContainer>
@@ -288,11 +388,13 @@ const styles = StyleSheet.create({
     fontWeight: fontWeights.heavy,
     color: colors.textPrimary,
     marginBottom: 4,
+    textAlign: 'center',
   },
   resultSubtitle: {
     fontSize: fontSizes.sm,
     color: colors.textMuted,
     marginBottom: spacing.lg,
+    textAlign: 'center',
   },
   severityRow: {
     flexDirection: 'row',
@@ -345,6 +447,8 @@ const styles = StyleSheet.create({
   catChecks: {
     fontSize: fontSizes.xs,
     color: colors.textMuted,
+    maxWidth: '50%',
+    textAlign: 'right',
   },
   actionBtn: {
     width: '100%',
@@ -353,5 +457,56 @@ const styles = StyleSheet.create({
   actionBtnSecondary: {
     width: '100%',
     marginBottom: spacing.xxl,
+  },
+  evidenceCard: {
+    marginBottom: spacing.sm,
+    backgroundColor: colors.surface,
+  },
+  evidenceHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  evidenceName: {
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.bold,
+    color: colors.textPrimary,
+    flex: 1,
+  },
+  trustBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: radius.sm,
+  },
+  trustVerified: {
+    backgroundColor: colors.secureBg,
+  },
+  trustPermReq: {
+    backgroundColor: '#FEF3C7',
+  },
+  trustUnavailable: {
+    backgroundColor: colors.surfaceMuted,
+  },
+  trustBadgeText: {
+    fontSize: 10,
+    fontWeight: fontWeights.bold,
+    color: colors.textPrimary,
+  },
+  evidenceSource: {
+    fontSize: fontSizes.xs,
+    color: colors.textMuted,
+    marginBottom: 2,
+  },
+  evidenceValue: {
+    fontSize: fontSizes.xs,
+    color: colors.textPrimary,
+    fontFamily: 'monospace',
+    marginBottom: 2,
+  },
+  evidenceNotes: {
+    fontSize: fontSizes.xs,
+    color: '#D97706',
+    fontStyle: 'italic',
   },
 });

@@ -1,0 +1,10 @@
+{
+  "platforms": ["android", "ios"],
+  "android": {
+    "package": "com.sentinel.deviceintelligence",
+    "modules": ["com.sentinel.deviceintelligence.SentinelDeviceIntelligenceModule"]
+  },
+  "ios": {
+    "modules": ["SentinelDeviceIntelligenceModule"]
+  }
+}

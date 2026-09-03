@@ -89,3 +89,119 @@ export interface CreateScanInput {
   deviceId: string;
   type?: ScanType;
 }
+
+// ──────────────────────────────────────────
+// Phase 4: Device Intelligence & Evidence
+// ──────────────────────────────────────────
+
+/**
+ * Sentinel Data Trust Model (PRD Section 18).
+ * Explicit information provenance for all security signals.
+ */
+export type DataTrustState =
+  | 'VERIFIED'           // Directly obtained from an authorized system/API
+  | 'USER_PROVIDED'      // Explicitly supplied by the user
+  | 'ANALYZED'           // Derived from evidence through security analysis
+  | 'NOT_AVAILABLE'      // The platform does not expose the required information
+  | 'PERMISSION_REQUIRED' // The check is possible but requires user authorization
+  | 'UNABLE_TO_VERIFY';  // The system attempted the check but could not establish a reliable result
+
+/**
+ * Platform check capability availability.
+ */
+export type CapabilityStatus =
+  | 'SUPPORTED'
+  | 'PARTIALLY_SUPPORTED'
+  | 'NOT_AVAILABLE'
+  | 'PERMISSION_REQUIRED'
+  | 'UNABLE_TO_VERIFY';
+
+/**
+ * Single piece of structured security evidence with provenance.
+ */
+export interface EvidenceItem {
+  checkId: string;
+  category: FindingCategory;
+  checkName: string;
+  value: unknown;
+  trustState: DataTrustState;
+  source: string;
+  platform: DevicePlatform;
+  timestamp: string;
+  capabilityStatus: CapabilityStatus;
+  permission?: string;
+  permissionGranted?: boolean;
+  notes?: string;
+}
+
+/**
+ * Discovered application metadata (read-only, no APK collection).
+ */
+export interface DiscoveredAppEvidence {
+  name: string;
+  packageName: string;
+  versionName?: string | null;
+  versionCode?: number | null;
+  isSystemApp: boolean;
+  installSource?: string | null;
+  requestedPermissions?: string[];
+  grantedPermissions?: string[];
+}
+
+/**
+ * Normalized device inspection output.
+ */
+export interface DeviceInspectionResult {
+  deviceId?: string;
+  deviceInfo: {
+    manufacturer: string;
+    model: string;
+    brand?: string;
+    product?: string;
+    device?: string;
+    osVersion: string;
+    apiLevel?: number;
+    securityPatch?: string | null;
+    fingerprint?: string;
+    supportedAbis?: string[];
+    hardware?: string;
+    isEmulator?: boolean;
+  };
+  systemSignals: Record<string, EvidenceItem>;
+  applicationDiscovery: {
+    status: 'discovered' | 'partially_discoverable' | 'unavailable';
+    totalDiscovered: number;
+    limitationReason?: string;
+    applications: DiscoveredAppEvidence[];
+  };
+  networkSignals: Record<string, EvidenceItem>;
+  capabilities: Record<string, CapabilityStatus>;
+  inspectedAt: string;
+  rawEvidence: EvidenceItem[];
+}
+
+/**
+ * Payload for synchronizing evidence with the backend.
+ */
+export interface SyncEvidenceInput {
+  rawEvidence: EvidenceItem[];
+  capabilities: Record<string, CapabilityStatus>;
+  deviceInfo?: {
+    manufacturer?: string;
+    model?: string;
+    osVersion?: string;
+  };
+  summary?: string;
+}
+
+/**
+ * Desktop agent boundary contract (Phase 4 desktop foundation).
+ * Prepares registration and evidence synchronization for future Tauri/Rust agent.
+ */
+export interface DesktopAgentContract {
+  agentVersion: string;
+  platform: 'WINDOWS' | 'MACOS' | 'LINUX';
+  registerDevice(name: string): Promise<CreateDeviceInput>;
+  collectEvidence(): Promise<EvidenceItem[]>;
+}
+

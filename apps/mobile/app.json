@@ -10,6 +10,7 @@
     "platforms": ["android", "ios"],
     "android": {
       "package": "com.sentinel.app",
+      "permissions": ["android.permission.INTERNET", "android.permission.ACCESS_NETWORK_STATE"],
       "adaptiveIcon": {
         "backgroundColor": "#0A0A0F"
       }

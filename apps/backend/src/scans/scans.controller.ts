@@ -3,7 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { ScansService } from './scans.service';
-import { CreateScanDto } from './dto';
+import { CreateScanDto, SyncEvidenceDto } from './dto';
 
 @ApiTags('Scans')
 @ApiBearerAuth()
@@ -22,6 +22,25 @@ export class ScansController {
     @Body() dto: CreateScanDto,
   ) {
     const scan = await this.scansService.create(user.id, dto);
+    return {
+      success: true,
+      data: scan,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Post(':id/evidence')
+  @ApiOperation({ summary: 'Synchronize device evidence for a scan' })
+  @ApiResponse({ status: 200, description: 'Evidence recorded and scan completed' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Scan not found' })
+  async syncEvidence(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: { id: string },
+    @Body() dto: SyncEvidenceDto,
+  ) {
+    const scan = await this.scansService.syncEvidence(id, user.id, dto);
     return {
       success: true,
       data: scan,
@@ -57,3 +76,4 @@ export class ScansController {
     };
   }
 }
+
