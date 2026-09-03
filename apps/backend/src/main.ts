@@ -1,11 +1,18 @@
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { VersioningType } from '@nestjs/common';
+import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
+  const app = await NestFactory.create<NestFastifyApplication>(
+    AppModule,
+    new FastifyAdapter(),
+  );
+
+  // Global exception filter
+  app.useGlobalFilters(new AllExceptionsFilter());
 
   // API versioning
   app.setGlobalPrefix('api');
@@ -14,11 +21,48 @@ async function bootstrap() {
     defaultVersion: '1',
   });
 
+  // Global validation pipe
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      transformOptions: { enableImplicitConversion: true },
+    }),
+  );
+
+  // CORS
+  await app.register(
+    (await import('@fastify/cors')).default as any,
+    {
+      origin: process.env.NODE_ENV === 'production'
+        ? false
+        : true,
+      credentials: true,
+    },
+  );
+
+  // Security headers
+  await app.register(
+    (await import('@fastify/helmet')).default as any,
+    {
+      contentSecurityPolicy: false,
+    },
+  );
+
+  // Request body size limit
+  app.getHttpAdapter()
+    .getInstance()
+    .addHook('onRequest', (_req: any, _reply: any, done: () => void) => {
+      done();
+    });
+
   // OpenAPI / Swagger
   const config = new DocumentBuilder()
     .setTitle('Sentinel API')
     .setDescription('Sentinel — Personal Cybersecurity Intelligence API')
     .setVersion('0.1.0')
+    .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);

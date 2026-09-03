@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { colors } from '../src/design-system/colors';
 import { SidebarNav } from '../src/components/layout/SidebarNav';
 import { useResponsive } from '../src/hooks/useResponsive';
+import { AuthProvider } from '../src/hooks/useAuth';
 import type { NavTab } from '../src/types/ui';
 
 export default function RootLayout() {
@@ -41,6 +42,7 @@ export default function RootLayout() {
   };
 
   return (
+    <AuthProvider>
     <View style={styles.root}>
       <StatusBar style="dark" />
 
@@ -59,6 +61,7 @@ export default function RootLayout() {
         </Stack>
       </View>
     </View>
+    </AuthProvider>
   );
 }
 
