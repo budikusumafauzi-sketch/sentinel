@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { colors } from '../../src/design-system/colors';
 import { spacing } from '../../src/design-system/spacing';
@@ -8,34 +8,92 @@ import { ScreenContainer } from '../../src/components/layout/ScreenContainer';
 import { ScreenHeader } from '../../src/components/layout/ScreenHeader';
 import { Card } from '../../src/components/common/Card';
 import { StatusBadge } from '../../src/components/common/Badge';
-import { Icon, type IconName } from '../../src/components/common/Icon';
+import { Icon } from '../../src/components/common/Icon';
 import { FindingCard } from '../../src/components/security/FindingCard';
 import { SectionHeader } from '../../src/components/common/SectionHeader';
-import {
-  mockCategories,
-  mockApplications,
-  mockFindings,
-  mockSystemControls,
-} from '../../src/mock/securityData';
+import { securityStore } from '../../src/services/securityStore';
+import type { SystemControlStatus } from '../../src/types/security';
 
 type CategoryTabId =
-  'all' | 'device' | 'applications' | 'accounts' | 'privacy' | 'network' | 'system';
+  | 'all'
+  | 'device'
+  | 'applications'
+  | 'accounts'
+  | 'privacy'
+  | 'network'
+  | 'system';
 
 export default function ProtectScreen() {
   const [activeCategory, setActiveCategory] = useState<CategoryTabId>('applications');
-  const [appFilter, setAppFilter] = useState<'all' | 'secure' | 'review' | 'risk'>('all');
+  const [report, setReport] = useState(() => securityStore.getReport());
 
-  const filteredApps = mockApplications.filter((app) => {
-    if (appFilter === 'secure') return app.status === 'secure';
-    if (appFilter === 'review') return app.status === 'attention';
-    if (appFilter === 'risk') return app.status === 'risk';
-    return true;
-  });
+  useEffect(() => {
+    return securityStore.subscribe(() => {
+      setReport(securityStore.getReport());
+    });
+  }, []);
 
-  const categoryFindings = mockFindings.filter((f) => {
+  const categories = securityStore.getCategories();
+  const allFindings = securityStore.getFindings();
+
+  const categoryFindings = allFindings.filter((f) => {
     if (activeCategory === 'all') return true;
     return f.category.toLowerCase() === activeCategory.toLowerCase();
   });
+
+  const systemControls: SystemControlStatus[] = report
+    ? [
+        {
+          id: 'ctrl-lock',
+          name: 'Screen Lock & Keyguard',
+          status: report.findings.some((f) => f.ruleId === 'SEC-SYS-SCREEN-LOCK' && f.status === 'ACTIVE')
+            ? 'risk'
+            : 'secure',
+          statusLabel: report.findings.some((f) => f.ruleId === 'SEC-SYS-SCREEN-LOCK' && f.status === 'ACTIVE')
+            ? 'Disabled'
+            : 'Configured',
+          lastChecked: 'Verified',
+        },
+        {
+          id: 'ctrl-enc',
+          name: 'Device Storage Encryption',
+          status: report.findings.some((f) => f.ruleId === 'SEC-SYS-STORAGE-ENCRYPTION' && f.status === 'ACTIVE')
+            ? 'critical'
+            : 'secure',
+          statusLabel: report.findings.some((f) => f.ruleId === 'SEC-SYS-STORAGE-ENCRYPTION' && f.status === 'ACTIVE')
+            ? 'Inactive'
+            : 'Encrypted',
+          lastChecked: 'Verified',
+        },
+        {
+          id: 'ctrl-patch',
+          name: 'OS Security Patch Level',
+          status: report.findings.some((f) => f.ruleId === 'SEC-SYS-SECURITY-PATCH' && f.status === 'ACTIVE')
+            ? 'attention'
+            : 'secure',
+          statusLabel: report.findings.some((f) => f.ruleId === 'SEC-SYS-SECURITY-PATCH' && f.status === 'ACTIVE')
+            ? 'Outdated'
+            : report.deviceInfo?.securityPatch || 'Current',
+          lastChecked: report.deviceInfo?.securityPatch || 'Checked',
+        },
+        {
+          id: 'ctrl-adb',
+          name: 'USB Debugging (ADB)',
+          status: report.findings.some((f) => f.ruleId === 'SEC-SYS-DEV-DEBUGGING' && f.status === 'ACTIVE')
+            ? 'attention'
+            : 'secure',
+          statusLabel: report.findings.some((f) => f.ruleId === 'SEC-SYS-DEV-DEBUGGING' && f.status === 'ACTIVE')
+            ? 'Enabled'
+            : 'Disabled',
+          lastChecked: 'Verified',
+        },
+      ]
+    : [
+        { id: 'ctrl-lock', name: 'Screen Lock & Keyguard', status: 'neutral', statusLabel: 'Pending Scan', lastChecked: 'Not checked' },
+        { id: 'ctrl-enc', name: 'Device Storage Encryption', status: 'neutral', statusLabel: 'Pending Scan', lastChecked: 'Not checked' },
+        { id: 'ctrl-patch', name: 'OS Security Patch Level', status: 'neutral', statusLabel: 'Pending Scan', lastChecked: 'Not checked' },
+        { id: 'ctrl-adb', name: 'USB Debugging (ADB)', status: 'neutral', statusLabel: 'Pending Scan', lastChecked: 'Not checked' },
+      ];
 
   return (
     <ScreenContainer>
@@ -60,7 +118,7 @@ export default function ProtectScreen() {
           </Text>
         </TouchableOpacity>
 
-        {mockCategories.map((cat) => {
+        {categories.map((cat) => {
           const isActive = activeCategory === cat.id;
           return (
             <TouchableOpacity
@@ -77,98 +135,16 @@ export default function ProtectScreen() {
         })}
       </ScrollView>
 
-      {/* Applications Specific View (Matching Design Reference) */}
-      {activeCategory === 'applications' && (
-        <View style={styles.sectionWrapper}>
-          {/* App Status Filters */}
-          <View style={styles.filterRow}>
-            <TouchableOpacity
-              style={[styles.filterChip, appFilter === 'all' && styles.filterChipActive]}
-              onPress={() => setAppFilter('all')}
-            >
-              <Text
-                style={[styles.filterChipText, appFilter === 'all' && styles.filterChipTextActive]}
-              >
-                All (147)
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.filterChip, appFilter === 'secure' && styles.filterChipActive]}
-              onPress={() => setAppFilter('secure')}
-            >
-              <Text
-                style={[
-                  styles.filterChipText,
-                  appFilter === 'secure' && styles.filterChipTextActive,
-                ]}
-              >
-                Secure (132)
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.filterChip, appFilter === 'review' && styles.filterChipActive]}
-              onPress={() => setAppFilter('review')}
-            >
-              <Text
-                style={[
-                  styles.filterChipText,
-                  appFilter === 'review' && styles.filterChipTextActive,
-                ]}
-              >
-                Review (11)
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.filterChip, appFilter === 'risk' && styles.filterChipActive]}
-              onPress={() => setAppFilter('risk')}
-            >
-              <Text
-                style={[styles.filterChipText, appFilter === 'risk' && styles.filterChipTextActive]}
-              >
-                High Risk (4)
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Applications List */}
-          <SectionHeader title="Installed Applications" />
-          {filteredApps.map((app) => (
-            <Card key={app.id} variant="outlined" padding="md" style={styles.appCard}>
-              <View style={styles.appHeader}>
-                <View style={styles.appLeft}>
-                  <View style={styles.appIconCircle}>
-                    <Icon name={app.iconName as IconName} size={18} color={colors.primary} />
-                  </View>
-                  <View style={styles.appInfo}>
-                    <Text style={styles.appName}>{app.name}</Text>
-                    <Text style={styles.appDesc}>{app.description}</Text>
-                  </View>
-                </View>
-                <StatusBadge status={app.status} label={app.statusLabel} size="sm" />
-              </View>
-              {app.riskNote && (
-                <View style={styles.appRiskBanner}>
-                  <Text style={styles.appRiskText}>⚠️ {app.riskNote}</Text>
-                </View>
-              )}
-            </Card>
-          ))}
-        </View>
-      )}
-
       {/* System Category Specific View */}
       {activeCategory === 'system' && (
         <View style={styles.sectionWrapper}>
           <SectionHeader title="Operating System & Kernel Safeguards" />
           <Card variant="outlined" padding="md" style={styles.controlsCard}>
-            {mockSystemControls.map((ctrl) => (
+            {systemControls.map((ctrl) => (
               <View key={ctrl.id} style={styles.controlRow}>
                 <View style={styles.ctrlLeft}>
                   <Text style={styles.ctrlName}>{ctrl.name}</Text>
-                  <Text style={styles.ctrlChecked}>Last validated: {ctrl.lastChecked}</Text>
+                  <Text style={styles.ctrlChecked}>Status: {ctrl.lastChecked}</Text>
                 </View>
                 <StatusBadge status={ctrl.status} label={ctrl.statusLabel} size="sm" />
               </View>
@@ -177,13 +153,13 @@ export default function ProtectScreen() {
         </View>
       )}
 
-      {/* Other Categories or All: Display Category Findings */}
+      {/* Category Findings Section */}
       <View style={styles.sectionWrapper}>
         <SectionHeader
           title={
             activeCategory === 'all'
-              ? 'Active Security Findings (All Categories)'
-              : `${activeCategory.toUpperCase()} Security Findings`
+              ? `Active Security Findings (${allFindings.length})`
+              : `${activeCategory.toUpperCase()} Findings (${categoryFindings.length})`
           }
         />
         {categoryFindings.length > 0 ? (
@@ -193,7 +169,7 @@ export default function ProtectScreen() {
             <Icon name="check" size={24} color={colors.secureDark} />
             <Text style={styles.allClearTitle}>No Active Findings in this Category</Text>
             <Text style={styles.allClearSub}>
-              All evaluated baseline checks passed without detected anomalies.
+              Based on the checks available to Sentinel, all evaluated controls passed without detected anomalies.
             </Text>
           </Card>
         )}
@@ -231,79 +207,6 @@ const styles = StyleSheet.create({
   sectionWrapper: {
     marginBottom: spacing.lg,
   },
-  filterRow: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-    marginBottom: spacing.md,
-    flexWrap: 'wrap',
-  },
-  filterChip: {
-    paddingVertical: 6,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.md,
-    backgroundColor: colors.surfaceMuted,
-  },
-  filterChipActive: {
-    backgroundColor: colors.primaryLight,
-    borderWidth: 1,
-    borderColor: colors.primary,
-  },
-  filterChipText: {
-    fontSize: fontSizes.xs,
-    fontWeight: fontWeights.medium,
-    color: colors.textSecondary,
-  },
-  filterChipTextActive: {
-    color: colors.primaryDark,
-    fontWeight: fontWeights.bold,
-  },
-  appCard: {
-    marginBottom: spacing.sm,
-  },
-  appHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  appLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    marginRight: spacing.sm,
-  },
-  appIconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.md,
-    backgroundColor: colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.md,
-  },
-  appInfo: {
-    flex: 1,
-  },
-  appName: {
-    fontSize: fontSizes.sm,
-    fontWeight: fontWeights.semibold,
-    color: colors.textPrimary,
-  },
-  appDesc: {
-    fontSize: fontSizes.xs,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  appRiskBanner: {
-    marginTop: spacing.sm,
-    padding: spacing.xs + 2,
-    borderRadius: radius.sm,
-    backgroundColor: colors.warningBg,
-  },
-  appRiskText: {
-    fontSize: fontSizes.xs,
-    color: colors.warningDark,
-    fontWeight: fontWeights.medium,
-  },
   controlsCard: {
     marginBottom: spacing.md,
   },
@@ -331,17 +234,20 @@ const styles = StyleSheet.create({
   allClearCard: {
     alignItems: 'center',
     paddingVertical: spacing.xl,
-    gap: spacing.xs,
   },
   allClearTitle: {
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.md,
     fontWeight: fontWeights.bold,
-    color: colors.secureDark,
-    marginTop: spacing.xs,
+    color: colors.textPrimary,
+    marginTop: spacing.sm,
+    marginBottom: 4,
+    textAlign: 'center',
   },
   allClearSub: {
     fontSize: fontSizes.xs,
     color: colors.textMuted,
     textAlign: 'center',
+    maxWidth: 300,
+    lineHeight: 18,
   },
 });

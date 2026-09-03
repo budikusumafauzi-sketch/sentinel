@@ -116,6 +116,38 @@ class ApiClient {
     return this.request<any[]>('/scans');
   }
 
+  async getScan(id: string) {
+    return this.request<any>(`/scans/${id}`);
+  }
+
+  async getScanReport(scanId: string) {
+    return this.request<any>(`/scans/${scanId}/report`);
+  }
+
+  // ── Scores ──────────────────────────────
+  async getLatestScore(deviceId: string) {
+    return this.request<any>(`/scores/latest?deviceId=${deviceId}`);
+  }
+
+  // ── Findings ────────────────────────────
+  async getDeviceFindings(deviceId: string) {
+    return this.request<any[]>(`/findings/device/${deviceId}`);
+  }
+
+  // ── Recommendations ─────────────────────
+  async getDeviceRecommendations(deviceId: string) {
+    return this.request<any[]>(`/recommendations/device/${deviceId}`);
+  }
+
+  // ── History & Events ────────────────────
+  async getDeviceHistory(deviceId: string) {
+    return this.request<any[]>(`/devices/${deviceId}/history`);
+  }
+
+  async getDeviceEvents(deviceId: string) {
+    return this.request<any[]>(`/devices/${deviceId}/events`);
+  }
+
   // ── Health ──────────────────────────────
   async healthCheck() {
     return this.request<any>('/health');

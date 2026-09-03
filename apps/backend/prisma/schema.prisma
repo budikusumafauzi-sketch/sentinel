@@ -1,5 +1,6 @@
 // Sentinel — Prisma Schema
 // Phase 3: Backend + Database Foundation
+// Phase 5: Security Evidence + Deterministic Security Engine
 
 generator client {
   provider = "prisma-client-js"
@@ -26,6 +27,7 @@ enum ScanStatus {
   PENDING
   RUNNING
   COMPLETED
+  PARTIAL
   FAILED
   CANCELLED
 }
@@ -53,6 +55,9 @@ enum FindingStatus {
 }
 
 enum FindingCategory {
+  DEVICE
+  APPLICATIONS
+  ACCOUNTS
   SYSTEM
   APPLICATION
   NETWORK
@@ -92,9 +97,11 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  devices         Device[]
-  scans           Scan[]
-  securityScores  SecurityScore[]
+  devices           Device[]
+  scans             Scan[]
+  securityScores    SecurityScore[]
+  securityHistories SecurityHistory[]
+  securityEvents    SecurityEvent[]
 
   @@map("users")
 }
@@ -112,31 +119,40 @@ model Device {
   createdAt    DateTime       @default(now()) @map("created_at")
   updatedAt    DateTime       @updatedAt @map("updated_at")
 
-  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  scans          Scan[]
-  securityScores SecurityScore[]
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scans             Scan[]
+  securityScores    SecurityScore[]
+  securityHistories SecurityHistory[]
+  securityEvents    SecurityEvent[]
 
   @@index([userId])
   @@map("devices")
 }
 
 model Scan {
-  id          String     @id @default(uuid())
-  userId      String     @map("user_id")
-  deviceId    String     @map("device_id")
-  type        ScanType   @default(QUICK)
-  status      ScanStatus @default(PENDING)
-  startedAt   DateTime?  @map("started_at")
-  completedAt DateTime?  @map("completed_at")
-  summary     String?
-  rawEvidence Json?      @map("raw_evidence")
-  capabilities Json?     @map("capabilities")
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @updatedAt @map("updated_at")
+  id                 String     @id @default(uuid())
+  userId             String     @map("user_id")
+  deviceId           String     @map("device_id")
+  type               ScanType   @default(QUICK)
+  status             ScanStatus @default(PENDING)
+  score              Int?
+  evaluatedControls  Int?       @map("evaluated_controls")
+  unavailableChecks  Int?       @map("unavailable_checks")
+  report             Json?
+  startedAt          DateTime?  @map("started_at")
+  completedAt        DateTime?  @map("completed_at")
+  summary            String?
+  rawEvidence        Json?      @map("raw_evidence")
+  capabilities       Json?      @map("capabilities")
+  createdAt          DateTime   @default(now()) @map("created_at")
+  updatedAt          DateTime   @updatedAt @map("updated_at")
 
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  device   Device    @relation(fields: [deviceId], references: [id], onDelete: Cascade)
-  findings Finding[]
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device            Device            @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  findings          Finding[]
+  securityScores    SecurityScore[]
+  securityHistories SecurityHistory[]
+  securityEvents    SecurityEvent[]
 
   @@index([userId])
   @@index([deviceId])
@@ -147,10 +163,16 @@ model Scan {
 model Finding {
   id             String          @id @default(uuid())
   scanId         String          @map("scan_id")
+  deviceId       String?         @map("device_id")
+  fingerprint    String?
+  ruleId         String?         @map("rule_id")
+  rulesetVersion String?         @map("ruleset_version")
   category       FindingCategory
   title          String
   description    String?
   severity       FindingSeverity
+  riskScore      Int?            @map("risk_score")
+  priority       String?
   status         FindingStatus   @default(OPEN)
   source         String?
   platform       DevicePlatform?
@@ -166,44 +188,111 @@ model Finding {
   recommendations Recommendation[]
 
   @@index([scanId])
+  @@index([deviceId])
+  @@index([fingerprint])
   @@index([severity])
   @@index([status])
   @@map("findings")
 }
 
 model SecurityScore {
-  id            String   @id @default(uuid())
-  userId        String   @map("user_id")
-  deviceId      String   @map("device_id")
-  overallScore  Int      @map("overall_score")
-  categoryScores Json?   @map("category_scores")
-  calculatedAt  DateTime @default(now()) @map("calculated_at")
-  createdAt     DateTime @default(now()) @map("created_at")
+  id                    String    @id @default(uuid())
+  userId                String    @map("user_id")
+  deviceId              String    @map("device_id")
+  scanId                String?   @map("scan_id")
+  overallScore          Int       @map("overall_score")
+  scoreVersion          String?   @map("score_version")
+  riskModelVersion      String?   @map("risk_model_version")
+  rulesetVersion        String?   @map("ruleset_version")
+  evaluatedControlCount Int?      @map("evaluated_control_count")
+  unavailableCheckCount Int?      @map("unavailable_check_count")
+  categoryScores        Json?     @map("category_scores")
+  findingContributions  Json?     @map("finding_contributions")
+  calculatedAt          DateTime  @default(now()) @map("calculated_at")
+  createdAt             DateTime  @default(now()) @map("created_at")
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  scan   Scan?  @relation(fields: [scanId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([deviceId])
+  @@index([scanId])
   @@index([calculatedAt])
   @@map("security_scores")
 }
 
 model Recommendation {
-  id          String               @id @default(uuid())
-  findingId   String?              @map("finding_id")
-  title       String
-  description String?
-  priority    RecommendationPriority
-  status      RecommendationStatus @default(PENDING)
-  actionUrl   String?              @map("action_url")
-  createdAt   DateTime             @default(now()) @map("created_at")
-  updatedAt   DateTime             @updatedAt @map("updated_at")
+  id                 String                 @id @default(uuid())
+  findingId          String?                @map("finding_id")
+  deviceId           String?                @map("device_id")
+  findingFingerprint String?                @map("finding_fingerprint")
+  category           String?
+  title              String
+  description        String?
+  priority           RecommendationPriority
+  status             RecommendationStatus   @default(PENDING)
+  actionUrl          String?                @map("action_url")
+  createdAt          DateTime               @default(now()) @map("created_at")
+  updatedAt          DateTime               @updatedAt @map("updated_at")
 
   finding Finding? @relation(fields: [findingId], references: [id], onDelete: SetNull)
 
   @@index([findingId])
+  @@index([deviceId])
+  @@index([findingFingerprint])
   @@index([priority])
   @@index([status])
   @@map("recommendations")
+}
+
+model SecurityHistory {
+  id                String   @id @default(uuid())
+  userId            String   @map("user_id")
+  deviceId          String   @map("device_id")
+  scanId            String   @map("scan_id")
+  overallScore      Int?     @map("overall_score")
+  categoryScores    Json?    @map("category_scores")
+  findingCounts     Json?    @map("finding_counts")
+  evaluatedControls Int      @default(0) @map("evaluated_controls")
+  unavailableChecks Int      @default(0) @map("unavailable_checks")
+  coverage          Float    @default(0.0)
+  status            String   @default("COMPLETED")
+  trend             String   @default("INITIAL")
+  scoreDelta        Int?     @map("score_delta")
+  recordedAt        DateTime @default(now()) @map("recorded_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  scan   Scan   @relation(fields: [scanId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([deviceId])
+  @@index([scanId])
+  @@index([recordedAt])
+  @@map("security_histories")
+}
+
+model SecurityEvent {
+  id                 String           @id @default(uuid())
+  userId             String           @map("user_id")
+  deviceId           String           @map("device_id")
+  scanId             String?          @map("scan_id")
+  findingFingerprint String?          @map("finding_fingerprint")
+  type               String
+  title              String
+  description        String
+  severity           FindingSeverity?
+  metadata           Json?
+  createdAt          DateTime         @default(now()) @map("created_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  scan   Scan?  @relation(fields: [scanId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([deviceId])
+  @@index([scanId])
+  @@index([createdAt])
+  @@map("security_events")
 }

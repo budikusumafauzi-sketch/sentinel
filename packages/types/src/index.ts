@@ -35,7 +35,7 @@ export interface HealthStatus {
 export type DevicePlatform = 'ANDROID' | 'IOS' | 'WINDOWS' | 'MACOS' | 'LINUX';
 
 /** Scan status enumeration. */
-export type ScanStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+export type ScanStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'PARTIAL' | 'FAILED' | 'CANCELLED';
 
 /** Scan type enumeration. */
 export type ScanType = 'QUICK' | 'FULL' | 'CUSTOM';
@@ -204,4 +204,9 @@ export interface DesktopAgentContract {
   registerDevice(name: string): Promise<CreateDeviceInput>;
   collectEvidence(): Promise<EvidenceItem[]>;
 }
+
+// ──────────────────────────────────────────
+// Phase 5: Security Engine & Intelligence
+// ──────────────────────────────────────────
+export * from './security-engine';
 

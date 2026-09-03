@@ -40,6 +40,38 @@ export class DevicesController {
     };
   }
 
+  @Get(':id/history')
+  @ApiOperation({ summary: 'Get security history for a device' })
+  @ApiResponse({ status: 200, description: 'List of security history records' })
+  @ApiResponse({ status: 404, description: 'Device not found' })
+  async getHistory(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: { id: string },
+  ) {
+    const history = await this.devicesService.getHistory(id, user.id);
+    return {
+      success: true,
+      data: history,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Get(':id/events')
+  @ApiOperation({ summary: 'Get security events for a device' })
+  @ApiResponse({ status: 200, description: 'List of security events' })
+  @ApiResponse({ status: 404, description: 'Device not found' })
+  async getEvents(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: { id: string },
+  ) {
+    const events = await this.devicesService.getEvents(id, user.id);
+    return {
+      success: true,
+      data: events,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a device by ID' })
   @ApiResponse({ status: 200, description: 'Device details' })

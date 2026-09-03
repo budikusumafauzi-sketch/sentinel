@@ -11,11 +11,13 @@ import { Icon } from '../../src/components/common/Icon';
 import { PrimaryButton, SecondaryButton } from '../../src/components/common/Button';
 import { ScanTypeSelector, type ScanType } from '../../src/components/scan/ScanTypeSelector';
 import { ScanProgressView } from '../../src/components/scan/ScanProgressView';
+import { FullReportView } from '../../src/components/security/FullReportView';
 import { deviceScanner, type ScanStageProgress } from '../../src/services/deviceScanner';
+import { securityStore } from '../../src/services/securityStore';
 import type { DeviceInspectionResult } from '@sentinel/types';
 import type { ScanProgress } from '../../src/types/security';
 
-type ScanScreenState = 'idle' | 'scanning' | 'result' | 'report' | 'error';
+type ScanScreenState = 'idle' | 'scanning' | 'result' | 'report' | 'fullReport' | 'error';
 
 const SCAN_STAGES = [
   { id: '1', name: 'Device Baseline', detail: 'Detecting manufacturer, model, OS version and hardware baseline', status: 'pending' as const },
@@ -102,6 +104,19 @@ export default function ScanScreen() {
     );
   }
 
+  // Full Security Report View
+  if (screenState === 'fullReport') {
+    const fullReportData = securityStore.getReportViewData();
+    if (fullReportData) {
+      return (
+        <ScreenContainer>
+          <FullReportView report={fullReportData} onBack={() => setScreenState('result')} />
+        </ScreenContainer>
+      );
+    }
+  }
+
+  // Evidence Provenance Report View
   if (screenState === 'report' && inspectionResult) {
     return (
       <ScreenContainer>
@@ -156,55 +171,83 @@ export default function ScanScreen() {
   }
 
   if (screenState === 'result' && inspectionResult) {
-    const verifiedCount = inspectionResult.rawEvidence.filter((e) => e.trustState === 'VERIFIED').length;
-    const permReqCount = inspectionResult.rawEvidence.filter((e) => e.trustState === 'PERMISSION_REQUIRED').length;
-    const partialCount = inspectionResult.rawEvidence.filter((e) => e.capabilityStatus === 'PARTIALLY_SUPPORTED').length;
-    const unavailCount = inspectionResult.rawEvidence.filter(
-      (e) => e.trustState === 'NOT_AVAILABLE' || e.trustState === 'UNABLE_TO_VERIFY',
-    ).length;
+    const report = (inspectionResult as any).report || securityStore.getReport();
+    const score = report?.overallScore ?? null;
+    const findings = report?.findings ?? [];
+    const activeFindings = findings.filter((f: any) => f.status === 'ACTIVE');
+    const findingCounts = report?.findingCounts ?? { critical: 0, high: 0, medium: 0, low: 0 };
+
+    const scoreColor =
+      score === null
+        ? colors.textMuted
+        : score >= 80
+          ? colors.secure
+          : score >= 50
+            ? colors.warning
+            : colors.danger;
 
     return (
       <ScreenContainer>
-        <ScreenHeader title="Inspection Completed" subtitle="Device intelligence recorded truthfully" />
+        <ScreenHeader title="Inspection Completed" subtitle="Deterministic security intelligence evaluated" />
 
-        {/* Result Card */}
+        {/* Phase 5 Security Score & Status Card */}
         <Card variant="elevated" padding="lg" style={styles.resultCard}>
-          <View style={styles.successIconCircle}>
-            <Icon name="check" size={36} color={colors.secureDark} />
+          <View style={[styles.scoreCircle, { borderColor: scoreColor }]}>
+            <Text style={[styles.scoreNumber, { color: scoreColor }]}>
+              {score !== null ? score : '--'}
+            </Text>
+            <Text style={styles.scoreScale}>/ 100</Text>
           </View>
+
           <Text style={styles.resultTitle}>
-            {inspectionResult.applicationDiscovery.status === 'partially_discoverable'
-              ? 'Completed with Platform Limits'
-              : 'Scan Finished Successfully'}
-          </Text>
-          <Text style={styles.resultSubtitle}>
-            {inspectionResult.deviceInfo.manufacturer} {inspectionResult.deviceInfo.model} · Android {inspectionResult.deviceInfo.osVersion}
+            {score === null
+              ? 'Insufficient Coverage'
+              : score >= 80
+                ? 'Device Posture Healthy'
+                : score >= 50
+                  ? 'Attention Required'
+                  : 'Critical Action Needed'}
           </Text>
 
-          {/* Provenance Counters Row */}
+          <Text style={styles.resultSubtitle}>
+            {report?.summary ||
+              (activeFindings.length === 0
+                ? 'Based on the checks available to Sentinel, no active security issues were detected.'
+                : `${activeFindings.length} security finding(s) detected.`)}
+          </Text>
+
+          {/* Severity Counters Row */}
           <View style={styles.severityRow}>
             <View style={styles.severityItem}>
-              <Text style={[styles.severityCount, { color: colors.secureDark }]}>{verifiedCount}</Text>
-              <Text style={styles.severityLabel}>Verified</Text>
+              <Text style={[styles.severityCount, { color: severityColors.critical.dark }]}>
+                {findingCounts.critical}
+              </Text>
+              <Text style={styles.severityLabel}>Critical</Text>
             </View>
             <View style={styles.severityItem}>
-              <Text style={[styles.severityCount, { color: severityColors.medium.dark }]}>{partialCount}</Text>
-              <Text style={styles.severityLabel}>Partial</Text>
+              <Text style={[styles.severityCount, { color: severityColors.high.dark }]}>
+                {findingCounts.high}
+              </Text>
+              <Text style={styles.severityLabel}>High</Text>
             </View>
             <View style={styles.severityItem}>
-              <Text style={[styles.severityCount, { color: severityColors.high.dark }]}>{permReqCount}</Text>
-              <Text style={styles.severityLabel}>Perm Req</Text>
+              <Text style={[styles.severityCount, { color: severityColors.medium.dark }]}>
+                {findingCounts.medium}
+              </Text>
+              <Text style={styles.severityLabel}>Medium</Text>
             </View>
             <View style={styles.severityItem}>
-              <Text style={[styles.severityCount, { color: colors.textMuted }]}>{unavailCount}</Text>
-              <Text style={styles.severityLabel}>Unavailable</Text>
+              <Text style={[styles.severityCount, { color: severityColors.low.dark }]}>
+                {findingCounts.low}
+              </Text>
+              <Text style={styles.severityLabel}>Low</Text>
             </View>
           </View>
         </Card>
 
-        {/* Categories Checks List */}
+        {/* Evaluated Security Controls Summary */}
         <View style={styles.checksListContainer}>
-          <Text style={styles.sectionTitle}>Verified Signal Summary</Text>
+          <Text style={styles.sectionTitle}>Evaluated Security Controls</Text>
 
           <View style={styles.categoryRow}>
             <View style={styles.catLeft}>
@@ -222,17 +265,17 @@ export default function ScanScreen() {
               <Text style={styles.catName}>Screen Lock & Storage</Text>
             </View>
             <Text style={styles.catChecks}>
-              {inspectionResult.systemSignals['security.screen_lock']?.value ? 'PIN/Pattern Set' : 'No Lock'} · {String(inspectionResult.systemSignals['security.storage_encryption']?.value || 'Encrypted')}
+              {inspectionResult.systemSignals['security.screen_lock']?.value ? 'Configured' : 'Disabled'} · {String(inspectionResult.systemSignals['security.storage_encryption']?.value ? 'Encrypted' : 'Unencrypted')}
             </Text>
           </View>
 
           <View style={styles.categoryRow}>
             <View style={styles.catLeft}>
               <Icon name="grid" size={18} color={colors.primary} />
-              <Text style={styles.catName}>Applications & Packages</Text>
+              <Text style={styles.catName}>Applications & Permissions</Text>
             </View>
             <Text style={styles.catChecks}>
-              {inspectionResult.applicationDiscovery.totalDiscovered} Discovered (Filtered by OS)
+              {inspectionResult.applicationDiscovery.totalDiscovered} Inspected ({report?.categoryScores?.['APPLICATIONS']?.score ?? 100} pts)
             </Text>
           </View>
 
@@ -245,22 +288,21 @@ export default function ScanScreen() {
               {(inspectionResult.networkSignals['network.connectivity']?.value as any)?.isConnected ? 'Connected' : 'Offline'} · VPN: {inspectionResult.networkSignals['network.vpn_transport']?.value ? 'Active' : 'Inactive'}
             </Text>
           </View>
-
-          <View style={styles.categoryRow}>
-            <View style={styles.catLeft}>
-              <Icon name="alert-circle" size={18} color={colors.textMuted} />
-              <Text style={styles.catName}>Wi-Fi Network SSID</Text>
-            </View>
-            <Text style={styles.catChecks}>Requires Location Perm</Text>
-          </View>
         </View>
 
-        {/* Actions */}
+        {/* Action Buttons */}
         <PrimaryButton
-          title="View Evidence Provenance Report"
-          onPress={() => setScreenState('report')}
+          title="View Full Security Report"
+          onPress={() => setScreenState('fullReport')}
           icon="file-text"
           size="lg"
+          style={styles.actionBtn}
+        />
+        <SecondaryButton
+          title="View Evidence Provenance Report"
+          onPress={() => setScreenState('report')}
+          icon="info"
+          size="md"
           style={styles.actionBtn}
         />
         <SecondaryButton
@@ -372,6 +414,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: spacing.xl,
   },
+  scoreCircle: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    borderWidth: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+    backgroundColor: colors.surface,
+  },
+  scoreNumber: {
+    fontSize: 28,
+    fontWeight: fontWeights.heavy,
+    lineHeight: 32,
+  },
+  scoreScale: {
+    fontSize: fontSizes.xs,
+    color: colors.textMuted,
+    marginTop: -2,
+  },
   successIconCircle: {
     width: 64,
     height: 64,
@@ -395,6 +457,8 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginBottom: spacing.lg,
     textAlign: 'center',
+    paddingHorizontal: spacing.sm,
+    lineHeight: 20,
   },
   severityRow: {
     flexDirection: 'row',

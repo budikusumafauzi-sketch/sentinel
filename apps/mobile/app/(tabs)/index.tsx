@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { spacing } from '../../src/design-system/spacing';
 import { ScreenContainer } from '../../src/components/layout/ScreenContainer';
 import { ScreenHeader } from '../../src/components/layout/ScreenHeader';
 import { ScoreGauge } from '../../src/components/security/ScoreGauge';
-import { PrimaryButton } from '../../src/components/common/Button';
+import { PrimaryButton, SecondaryButton } from '../../src/components/common/Button';
 import { CategoryCard } from '../../src/components/security/CategoryCard';
 import { RecommendationCard } from '../../src/components/security/RecommendationCard';
 import { ActivityItem } from '../../src/components/security/ActivityItem';
@@ -14,25 +14,116 @@ import { SectionHeader } from '../../src/components/common/SectionHeader';
 import { Card } from '../../src/components/common/Card';
 import { FullReportView } from '../../src/components/security/FullReportView';
 import { useResponsive } from '../../src/hooks/useResponsive';
-import {
-  mockSecurityScore,
-  mockFindingsSummary,
-  mockCategories,
-  mockRecommendations,
-  mockActivity,
-  mockSystemControls,
-  mockFullReport,
-} from '../../src/mock/securityData';
+import { securityStore } from '../../src/services/securityStore';
+import type { SystemControlStatus } from '../../src/types/security';
 
 export default function OverviewScreen() {
   const router = useRouter();
   const { isDesktop, isTablet } = useResponsive();
   const [showFullReport, setShowFullReport] = useState(false);
+  const [report, setReport] = useState(() => securityStore.getReport());
+
+  useEffect(() => {
+    return securityStore.subscribe(() => {
+      setReport(securityStore.getReport());
+    });
+  }, []);
+
+  const scoreData = securityStore.getScoreData();
+  const findingsSummary = securityStore.getFindingsSummary();
+  const categories = securityStore.getCategories();
+  const recommendations = securityStore.getRecommendations();
+  const activity = securityStore.getActivity();
+  const fullReport = securityStore.getReportViewData();
+
+  const systemControls: SystemControlStatus[] = report
+    ? [
+        {
+          id: 'ctrl-lock',
+          name: 'Screen Lock & Keyguard',
+          status: report.findings.some((f) => f.ruleId === 'SEC-SYS-SCREEN-LOCK' && f.status === 'ACTIVE')
+            ? 'risk'
+            : 'secure',
+          statusLabel: report.findings.some((f) => f.ruleId === 'SEC-SYS-SCREEN-LOCK' && f.status === 'ACTIVE')
+            ? 'Disabled'
+            : 'Configured',
+          lastChecked: 'Verified',
+        },
+        {
+          id: 'ctrl-enc',
+          name: 'Device Storage Encryption',
+          status: report.findings.some((f) => f.ruleId === 'SEC-SYS-STORAGE-ENCRYPTION' && f.status === 'ACTIVE')
+            ? 'critical'
+            : 'secure',
+          statusLabel: report.findings.some((f) => f.ruleId === 'SEC-SYS-STORAGE-ENCRYPTION' && f.status === 'ACTIVE')
+            ? 'Inactive'
+            : 'Encrypted',
+          lastChecked: 'Verified',
+        },
+        {
+          id: 'ctrl-patch',
+          name: 'OS Security Patch Level',
+          status: report.findings.some((f) => f.ruleId === 'SEC-SYS-SECURITY-PATCH' && f.status === 'ACTIVE')
+            ? 'attention'
+            : 'secure',
+          statusLabel: report.findings.some((f) => f.ruleId === 'SEC-SYS-SECURITY-PATCH' && f.status === 'ACTIVE')
+            ? 'Outdated'
+            : report.deviceInfo?.securityPatch || 'Current',
+          lastChecked: report.deviceInfo?.securityPatch || 'Checked',
+        },
+        {
+          id: 'ctrl-adb',
+          name: 'USB Debugging (ADB)',
+          status: report.findings.some((f) => f.ruleId === 'SEC-SYS-DEV-DEBUGGING' && f.status === 'ACTIVE')
+            ? 'attention'
+            : 'secure',
+          statusLabel: report.findings.some((f) => f.ruleId === 'SEC-SYS-DEV-DEBUGGING' && f.status === 'ACTIVE')
+            ? 'Enabled'
+            : 'Disabled',
+          lastChecked: 'Verified',
+        },
+      ]
+    : [
+        { id: 'ctrl-lock', name: 'Screen Lock & Keyguard', status: 'neutral', statusLabel: 'Pending Scan', lastChecked: 'Not checked' },
+        { id: 'ctrl-enc', name: 'Device Storage Encryption', status: 'neutral', statusLabel: 'Pending Scan', lastChecked: 'Not checked' },
+        { id: 'ctrl-patch', name: 'OS Security Patch Level', status: 'neutral', statusLabel: 'Pending Scan', lastChecked: 'Not checked' },
+        { id: 'ctrl-adb', name: 'USB Debugging (ADB)', status: 'neutral', statusLabel: 'Pending Scan', lastChecked: 'Not checked' },
+      ];
 
   if (showFullReport) {
+    if (!fullReport) {
+      return (
+        <ScreenContainer>
+          <ScreenHeader title="Security Report" subtitle="Complete inspection details" />
+          <Card variant="elevated" padding="lg" style={styles.emptyReportCard}>
+            <Text style={styles.emptyTitle}>No Scan Report Available</Text>
+            <Text style={styles.emptySubtitle}>
+              Based on the checks available to Sentinel, an inspection must be completed before a security report can be generated.
+            </Text>
+            <PrimaryButton
+              title="Run Device Scan Now"
+              onPress={() => {
+                setShowFullReport(false);
+                router.push('/(tabs)/scan');
+              }}
+              icon="scan"
+              size="md"
+              style={{ marginTop: spacing.md }}
+            />
+            <SecondaryButton
+              title="Back to Overview"
+              onPress={() => setShowFullReport(false)}
+              size="md"
+              style={{ marginTop: spacing.sm }}
+            />
+          </Card>
+        </ScreenContainer>
+      );
+    }
+
     return (
       <ScreenContainer>
-        <FullReportView report={mockFullReport} onBack={() => setShowFullReport(false)} />
+        <FullReportView report={fullReport} onBack={() => setShowFullReport(false)} />
       </ScreenContainer>
     );
   }
@@ -45,7 +136,7 @@ export default function OverviewScreen() {
         subtitle="Personal Cybersecurity Intelligence"
         isBrand
         rightIcon="bell"
-        rightBadgeCount={1}
+        rightBadgeCount={findingsSummary.critical + findingsSummary.high}
         onRightPress={() => {}}
       />
 
@@ -54,7 +145,7 @@ export default function OverviewScreen() {
         {/* Left Column on Desktop / Top Section on Mobile */}
         <View style={isDesktop ? styles.desktopLeftCol : styles.fullWidth}>
           {/* Security Score Gauge */}
-          <ScoreGauge scoreData={mockSecurityScore} findingsSummary={mockFindingsSummary} />
+          <ScoreGauge scoreData={scoreData} findingsSummary={findingsSummary} />
 
           {/* Quick Scan CTA Button */}
           <PrimaryButton
@@ -72,7 +163,7 @@ export default function OverviewScreen() {
             onAction={() => router.push('/(tabs)/protect')}
           />
           <View style={isTablet || isDesktop ? styles.categoryGrid : styles.categoryList}>
-            {mockCategories.map((cat) => (
+            {categories.map((cat) => (
               <CategoryCard
                 key={cat.id}
                 category={cat}
@@ -90,7 +181,7 @@ export default function OverviewScreen() {
           {/* Top Recommendation */}
           <SectionHeader title="Top Recommendation" />
           <RecommendationCard
-            recommendation={mockRecommendations[0]!}
+            recommendation={recommendations[0]!}
             onAction={() => router.push('/(tabs)/protect')}
             onViewAll={() => router.push('/(tabs)/protect')}
           />
@@ -98,7 +189,7 @@ export default function OverviewScreen() {
           {/* System Control Status */}
           <SectionHeader title="System Status" />
           <Card variant="outlined" padding="md" style={styles.systemCard}>
-            {mockSystemControls.slice(0, 4).map((ctrl) => (
+            {systemControls.slice(0, 4).map((ctrl) => (
               <SystemStatusRow key={ctrl.id} control={ctrl} />
             ))}
           </Card>
@@ -106,11 +197,11 @@ export default function OverviewScreen() {
           {/* Recent Security Activity */}
           <SectionHeader title="Recent Activity" actionText="Timeline" onAction={() => {}} />
           <Card variant="outlined" padding="md" style={styles.activityCard}>
-            {mockActivity.map((item, idx) => (
+            {activity.map((item, idx) => (
               <ActivityItem
                 key={item.id}
                 activity={item}
-                isLast={idx === mockActivity.length - 1}
+                isLast={idx === activity.length - 1}
               />
             ))}
           </Card>
@@ -158,7 +249,7 @@ const styles = StyleSheet.create({
   categoryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.sm,
+    gap: spacing.md,
     marginBottom: spacing.lg,
   },
   systemCard: {
@@ -169,7 +260,25 @@ const styles = StyleSheet.create({
   },
   fullReportBtn: {
     width: '100%',
-    marginTop: spacing.xs,
-    marginBottom: spacing.xxl,
+    marginBottom: spacing.xl,
+  },
+  emptyReportCard: {
+    alignItems: 'center',
+    paddingVertical: spacing.xl,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1E293B',
+    marginBottom: spacing.sm,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: spacing.md,
+    maxWidth: 320,
   },
 });

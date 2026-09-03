@@ -45,6 +45,21 @@ export class FindingsController {
     };
   }
 
+  @Get('device/:deviceId')
+  @ApiOperation({ summary: 'List findings by device' })
+  @ApiResponse({ status: 200, description: 'List of findings for device' })
+  async findByDevice(
+    @Param('deviceId', ParseUUIDPipe) deviceId: string,
+    @CurrentUser() user: { id: string },
+  ) {
+    const findings = await this.findingsService.findByDevice(deviceId, user.id);
+    return {
+      success: true,
+      data: findings,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a finding by ID' })
   @ApiResponse({ status: 200, description: 'Finding details' })

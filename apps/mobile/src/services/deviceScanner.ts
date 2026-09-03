@@ -1,14 +1,17 @@
 import { Platform } from 'react-native';
 import type {
   CapabilityStatus,
+  CompleteScanReport,
   DeviceInspectionResult,
   DevicePlatform,
   DiscoveredAppEvidence,
   EvidenceItem,
   SyncEvidenceInput,
 } from '@sentinel/types';
+import { executeSecurityEngine } from '@sentinel/types';
 import { SentinelDeviceIntelligence } from '../../modules/sentinel-device-intelligence/src';
 import { apiClient } from '../api/client';
+import { securityStore } from './securityStore';
 
 export interface ScanStageProgress {
   stage: string;
@@ -354,16 +357,41 @@ export class DeviceScannerService {
       rawEvidence,
     };
 
-    // ── Stage 6: Backend Synchronization ────────────────────────
+    // ── Stage 6: Security Intelligence & Engine Evaluation ──────────
+    onProgress?.({ stage: 'Evaluating security rules & calculating posture...', progress: 95 });
+
+    let scanReport: CompleteScanReport | null = null;
+
     if (syncWithBackend) {
-      onProgress?.({ stage: 'Synchronizing evidence with Sentinel Intelligence backend...', progress: 95 });
       try {
-        await this.syncEvidenceToBackend(inspectionResult, platform);
+        scanReport = await this.syncEvidenceToBackend(inspectionResult, platform);
       } catch (err) {
         // Backend synchronization error does not discard local scan evidence
         console.warn('Evidence synchronization to backend failed (offline or unauthenticated):', err);
       }
     }
+
+    // If backend did not return a report (e.g. offline/guest scan), execute deterministic engine locally
+    if (!scanReport) {
+      const localResult = executeSecurityEngine({
+        scanId: inspectionResult.deviceId ? `local-scan-${Date.now()}` : 'local-scan',
+        deviceId: inspectionResult.deviceId || 'local-device',
+        deviceInfo: {
+          manufacturer: inspectionResult.deviceInfo.manufacturer,
+          model: inspectionResult.deviceInfo.model,
+          osVersion: inspectionResult.deviceInfo.osVersion,
+          securityPatch: inspectionResult.deviceInfo.securityPatch,
+          isEmulator: inspectionResult.deviceInfo.isEmulator,
+          platform,
+        },
+        rawEvidence: inspectionResult.rawEvidence,
+      });
+      scanReport = localResult.report;
+    }
+
+    // Attach to inspection result and securityStore
+    (inspectionResult as any).report = scanReport;
+    securityStore.setReport(scanReport);
 
     onProgress?.({ stage: 'Device inspection completed.', progress: 100 });
     return inspectionResult;
@@ -372,11 +400,11 @@ export class DeviceScannerService {
   /**
    * Synchronizes discovered device and evidence with the Sentinel backend.
    */
-  private async syncEvidenceToBackend(result: DeviceInspectionResult, platform: DevicePlatform): Promise<void> {
+  private async syncEvidenceToBackend(result: DeviceInspectionResult, platform: DevicePlatform): Promise<CompleteScanReport | null> {
     const token = apiClient.getToken();
     if (!token) {
       // Offline / guest scan without auth — skip backend sync
-      return;
+      return null;
     }
 
     // 1. Identify or register the device with the backend
@@ -404,7 +432,7 @@ export class DeviceScannerService {
       deviceId = regRes.data?.id;
     }
 
-    if (!deviceId) return;
+    if (!deviceId) return null;
     result.deviceId = deviceId;
 
     // 2. Create scan record
@@ -413,7 +441,7 @@ export class DeviceScannerService {
       type: 'FULL',
     });
     const scanId = scanRes.data?.id;
-    if (!scanId) return;
+    if (!scanId) return null;
 
     // 3. Synchronize evidence
     const syncInput: SyncEvidenceInput = {
@@ -427,7 +455,8 @@ export class DeviceScannerService {
       summary: `Discovered ${result.rawEvidence.length} evidence items (${result.applicationDiscovery.totalDiscovered} apps visible)`,
     };
 
-    await apiClient.syncScanEvidence(scanId, syncInput);
+    const syncRes = await apiClient.syncScanEvidence(scanId, syncInput);
+    return (syncRes.data?.report || null) as CompleteScanReport | null;
   }
 
   // ── Fallbacks for non-native test/web environments ──────────

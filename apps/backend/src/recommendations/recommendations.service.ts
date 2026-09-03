@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { DevicesService } from '../devices/devices.service';
 import { CreateRecommendationDto } from './dto';
 
 @Injectable()
 export class RecommendationsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly devicesService: DevicesService,
+  ) {}
 
   async create(userId: string, dto: CreateRecommendationDto) {
     // If linked to a finding, verify ownership through scan -> user chain
@@ -46,6 +50,16 @@ export class RecommendationsService {
 
     return this.prisma.recommendation.findMany({
       where: { findingId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async findByDevice(deviceId: string, userId: string) {
+    await this.devicesService.findOneByUser(deviceId, userId);
+
+    return this.prisma.recommendation.findMany({
+      where: { deviceId },
+      include: { finding: true },
       orderBy: { createdAt: 'desc' },
     });
   }

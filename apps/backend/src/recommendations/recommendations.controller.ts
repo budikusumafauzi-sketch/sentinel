@@ -44,6 +44,21 @@ export class RecommendationsController {
     };
   }
 
+  @Get('device/:deviceId')
+  @ApiOperation({ summary: 'List recommendations by device' })
+  @ApiResponse({ status: 200, description: 'List of recommendations for device' })
+  async findByDevice(
+    @Param('deviceId', ParseUUIDPipe) deviceId: string,
+    @CurrentUser() user: { id: string },
+  ) {
+    const recommendations = await this.recommendationsService.findByDevice(deviceId, user.id);
+    return {
+      success: true,
+      data: recommendations,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a recommendation by ID' })
   @ApiResponse({ status: 200, description: 'Recommendation details' })

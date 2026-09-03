@@ -60,6 +60,22 @@ export class ScansController {
     };
   }
 
+  @Get(':id/report')
+  @ApiOperation({ summary: 'Get full structured scan report' })
+  @ApiResponse({ status: 200, description: 'Complete scan report' })
+  @ApiResponse({ status: 404, description: 'Scan report not found' })
+  async getReport(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: { id: string },
+  ) {
+    const report = await this.scansService.getReport(id, user.id);
+    return {
+      success: true,
+      data: report,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a scan by ID' })
   @ApiResponse({ status: 200, description: 'Scan details with findings' })

@@ -36,4 +36,22 @@ export class DevicesService {
     }
     return device;
   }
+
+  async getHistory(deviceId: string, userId: string) {
+    await this.findOneByUser(deviceId, userId);
+    return this.prisma.securityHistory.findMany({
+      where: { deviceId },
+      orderBy: { recordedAt: 'desc' },
+      take: 20,
+    });
+  }
+
+  async getEvents(deviceId: string, userId: string) {
+    await this.findOneByUser(deviceId, userId);
+    return this.prisma.securityEvent.findMany({
+      where: { deviceId },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+  }
 }
