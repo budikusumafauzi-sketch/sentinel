@@ -39,7 +39,7 @@ export class GeminiProvider implements AiProvider {
       this.configService.get<string>('GEMINI_MODEL') ||
       process.env.SENTINEL_GEMINI_MODEL ||
       process.env.GEMINI_MODEL ||
-      'gemini-2.5-flash';
+      'gemini-3.6-flash';
 
     if (!this.apiKey) {
       this.logger.warn(
@@ -72,8 +72,8 @@ export class GeminiProvider implements AiProvider {
       );
     }
 
-    const timeoutMs = request.timeoutMs ?? 20000;
-    const maxRetries = 2;
+    const timeoutMs = request.timeoutMs ?? 60000;
+    const maxRetries = 4;
     let attempt = 0;
     let lastError: Error | null = null;
 
@@ -86,7 +86,14 @@ export class GeminiProvider implements AiProvider {
 
         // Only retry on rate-limit (429) or transient provider unavailable (503)
         if (err instanceof GeminiProviderError && err.retryable && attempt <= maxRetries) {
-          const delayMs = Math.min(1000 * Math.pow(2, attempt) + Math.random() * 200, 4000);
+          let delayMs = Math.min(2500 * Math.pow(2, attempt) + Math.random() * 500, 10000);
+          const match = err.message.match(/retry in (\d+(?:\.\d+)?)s/i);
+          if (match && match[1]) {
+            const parsedSeconds = parseFloat(match[1]);
+            if (!isNaN(parsedSeconds) && parsedSeconds > 0 && parsedSeconds <= 45) {
+              delayMs = Math.ceil(parsedSeconds * 1000) + 1000;
+            }
+          }
           this.logger.warn(
             `Gemini request attempt ${attempt} failed with ${err.code}. Retrying in ${delayMs.toFixed(0)}ms...`,
           );
@@ -108,37 +115,33 @@ export class GeminiProvider implements AiProvider {
     const controller = new AbortController();
     const timeoutHandle = setTimeout(() => controller.abort(), timeoutMs);
 
-    const parts: Array<Record<string, unknown>> = [{ text: request.prompt }];
-
+    let input: unknown = request.prompt;
     if (request.image) {
-      parts.unshift({
-        inlineData: {
-          mimeType: request.image.mimeType,
+      input = [
+        { type: 'text', text: request.prompt },
+        {
+          type: 'image',
           data: request.image.base64,
+          mime_type: request.image.mimeType,
         },
-      });
+      ];
     }
 
     const payload: Record<string, unknown> = {
-      contents: [
-        {
-          role: 'user',
-          parts,
-        },
-      ],
-      generationConfig: {
-        responseMimeType: 'application/json',
-        temperature: request.temperature ?? 0.2,
+      model: this.model,
+      input,
+      response_format: {
+        type: 'text',
+        mime_type: 'application/json',
       },
+      store: false, // Strict privacy: do not persist interaction server-side
     };
 
     if (request.systemInstruction) {
-      payload.systemInstruction = {
-        parts: [{ text: request.systemInstruction }],
-      };
+      payload.system_instruction = request.systemInstruction;
     }
 
-    const url = `${this.baseUrl}/models/${this.model}:generateContent`;
+    const url = `${this.baseUrl}/interactions`;
 
     try {
       const response = await fetch(url, {
@@ -185,39 +188,31 @@ export class GeminiProvider implements AiProvider {
 
       const data = (await response.json()) as any;
 
-      // Check candidate safety blocks or empty candidates
-      const candidate = data?.candidates?.[0];
-      if (!candidate) {
-        const promptFeedback = data?.promptFeedback;
-        if (promptFeedback?.blockReason) {
-          throw new GeminiProviderError(
-            `Prompt blocked by provider safety policy: ${promptFeedback.blockReason}`,
-            'CONTENT_REJECTED',
-            400,
-            false,
-          );
-        }
+      if (data.status === 'failed') {
         throw new GeminiProviderError(
-          'Gemini returned empty candidate list',
-          'INVALID_PROVIDER_RESPONSE',
+          data.error?.message || 'Gemini interaction status: failed',
+          'PROVIDER_UNAVAILABLE',
           500,
           false,
         );
       }
 
-      if (candidate.finishReason === 'SAFETY' || candidate.finishReason === 'RECITATION') {
-        throw new GeminiProviderError(
-          `Response blocked due to finishReason: ${candidate.finishReason}`,
-          'CONTENT_REJECTED',
-          400,
-          false,
-        );
+      let partText: string | null = null;
+      if (Array.isArray(data.steps)) {
+        for (const step of data.steps) {
+          if (step.type === 'model_output' && Array.isArray(step.content)) {
+            for (const item of step.content) {
+              if (item.type === 'text' && typeof item.text === 'string') {
+                partText = (partText ? partText + '\n' : '') + item.text;
+              }
+            }
+          }
+        }
       }
 
-      const partText = candidate.content?.parts?.[0]?.text;
       if (!partText) {
         throw new GeminiProviderError(
-          'Gemini response part contained no text',
+          'Gemini response contained no text in model output steps',
           'INVALID_PROVIDER_RESPONSE',
           500,
           false,
@@ -242,9 +237,9 @@ export class GeminiProvider implements AiProvider {
         provider: this.getProviderName(),
         model: this.getModelName(),
         tokensUsed: {
-          promptTokens: data?.usageMetadata?.promptTokenCount,
-          completionTokens: data?.usageMetadata?.candidatesTokenCount,
-          totalTokens: data?.usageMetadata?.totalTokenCount,
+          promptTokens: data?.usage?.total_input_tokens ?? data?.usage?.raw_prompt_token,
+          completionTokens: data?.usage?.total_output_tokens,
+          totalTokens: data?.usage?.total_tokens,
         },
       };
     } catch (err: any) {
