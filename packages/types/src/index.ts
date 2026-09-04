@@ -63,7 +63,8 @@ export type FindingCategory =
 export type RecommendationPriority = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
 
 /** Recommendation status enumeration. */
-export type RecommendationStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'DISMISSED' | 'EXPIRED';
+export type RecommendationStatus =
+  'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'DISMISSED' | 'EXPIRED';
 
 /** Auth response. */
 export interface AuthResponse {
@@ -99,12 +100,12 @@ export interface CreateScanInput {
  * Explicit information provenance for all security signals.
  */
 export type DataTrustState =
-  | 'VERIFIED'           // Directly obtained from an authorized system/API
-  | 'USER_PROVIDED'      // Explicitly supplied by the user
-  | 'ANALYZED'           // Derived from evidence through security analysis
-  | 'NOT_AVAILABLE'      // The platform does not expose the required information
+  | 'VERIFIED' // Directly obtained from an authorized system/API
+  | 'USER_PROVIDED' // Explicitly supplied by the user
+  | 'ANALYZED' // Derived from evidence through security analysis
+  | 'NOT_AVAILABLE' // The platform does not expose the required information
   | 'PERMISSION_REQUIRED' // The check is possible but requires user authorization
-  | 'UNABLE_TO_VERIFY';  // The system attempted the check but could not establish a reliable result
+  | 'UNABLE_TO_VERIFY'; // The system attempted the check but could not establish a reliable result
 
 /**
  * Platform check capability availability.
@@ -215,4 +216,7 @@ export * from './security-engine';
 // ──────────────────────────────────────────
 export * from './ai';
 
-
+// ──────────────────────────────────────────
+// Phase 8: Threat Intelligence
+// ──────────────────────────────────────────
+export * from './threat-intel';

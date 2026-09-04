@@ -13,6 +13,7 @@ import { RecommendationsModule } from './recommendations/recommendations.module'
 import { RedisModule } from './redis/redis.module';
 import { QueueModule } from './queue/queue.module';
 import { AiModule } from './ai/ai.module';
+import { ThreatIntelModule } from './threat-intel/threat-intel.module';
 
 @Module({
   imports: [
@@ -20,10 +21,12 @@ import { AiModule } from './ai/ai.module';
       isGlobal: true,
       envFilePath: ['.env', 'apps/backend/.env'],
     }),
-    ThrottlerModule.forRoot([{
-      ttl: 60000,
-      limit: 100,
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 100,
+      },
+    ]),
     PrismaModule,
     RedisModule,
     QueueModule,
@@ -35,6 +38,7 @@ import { AiModule } from './ai/ai.module';
     ScoresModule,
     RecommendationsModule,
     AiModule,
+    ThreatIntelModule,
   ],
   providers: [
     {

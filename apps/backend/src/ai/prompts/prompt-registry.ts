@@ -248,24 +248,41 @@ REQUIRED JSON OUTPUT SCHEMA:
   buildUrlAnalysisPrompt(
     normalizedUrl: string,
     domain: string,
+    externalThreatIntel?: {
+      sourceDisplayName: string;
+      verdict: string;
+      threatType: string;
+      severity: string;
+      summary: string;
+    },
   ): { version: PromptVersion; prompt: string } {
+    const threatIntelContext = externalThreatIntel
+      ? `\nVERIFIED EXTERNAL THREAT INTELLIGENCE (Phase 8 Ground Truth):
+Source: ${externalThreatIntel.sourceDisplayName}
+Verdict: ${externalThreatIntel.verdict}
+Threat Category: ${externalThreatIntel.threatType}
+Severity: ${externalThreatIntel.severity}
+Summary: ${externalThreatIntel.summary}
+CRITICAL RULE: This external threat intelligence is authoritative evidence. Do NOT contradict or fabricate provider results.\n`
+      : '';
+
     const prompt = `[OPERATION: URL_ANALYZER_V1]
-Perform Phase 7 syntactic and structural AI analysis of the following user-submitted URL:
+Perform syntactic, structural, and intelligence analysis of the following user-submitted URL:
 
 NORMALIZED URL: ${normalizedUrl}
 EXTRACTED DOMAIN: ${domain}
-
+${threatIntelContext}
 TASK:
 Evaluate structural URL anomalies (e.g. brand impersonation in subdomain, unusual TLD, typosquatting patterns, obfuscated IP address, deceptive path).
-NOTE: External threat feeds, VirusTotal, and reputation registries belong to Phase 8 and are not queried here.
+Incorporate any provided verified external threat intelligence accurately.
 
 REQUIRED JSON OUTPUT SCHEMA:
 {
-  "observations": ["List of structural and lexical observations about the domain/URL"],
-  "riskInterpretation": "Interpretation of potential risks associated with this URL structure",
+  "observations": ["List of structural, lexical, and intelligence observations"],
+  "riskInterpretation": "Interpretation of potential risks associated with this URL structure and threat data",
   "riskLevel": "LOW" | "MEDIUM" | "HIGH" | "UNKNOWN",
   "confidence": 0.85,
-  "limitations": ["Lexical and heuristic analysis only; real-time external reputation databases require Phase 8 threat feeds"],
+  "limitations": ["Lexical analysis and verified threat intelligence feeds"],
   "sourceAttribution": "Sentinel AI URL Orchestrator"
 }
 `;

@@ -1,6 +1,7 @@
 import {
   Injectable,
   Inject,
+  Optional,
   Logger,
   NotFoundException,
   ForbiddenException,
@@ -9,10 +10,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import {
-  AI_PROVIDER_TOKEN,
-  AiProvider,
-} from './interfaces/ai-provider.interface';
+import { AI_PROVIDER_TOKEN, AiProvider } from './interfaces/ai-provider.interface';
 import { PromptRegistry } from './prompts/prompt-registry';
 import { OutputValidator, OutputValidationError } from './validation/output-validator';
 import { GeminiProviderError } from './providers/gemini.provider';
@@ -32,6 +30,8 @@ import {
   ScreenshotAnalysisDto,
 } from './dto';
 
+import { ThreatIntelService } from '../threat-intel/threat-intel.service';
+
 @Injectable()
 export class AiService {
   private readonly logger = new Logger(AiService.name);
@@ -41,6 +41,7 @@ export class AiService {
     private readonly promptRegistry: PromptRegistry,
     private readonly outputValidator: OutputValidator,
     @Inject(AI_PROVIDER_TOKEN) private readonly aiProvider: AiProvider,
+    @Optional() private readonly threatIntelService?: ThreatIntelService,
   ) {}
 
   /**
@@ -210,15 +211,11 @@ export class AiService {
         temperature: 0.2,
       });
 
-      return this.outputValidator.validateThreatAnalysis(
-        response.content,
-        version,
-        {
-          provider: response.provider,
-          model: response.model,
-          tokensUsed: response.tokensUsed,
-        },
-      );
+      return this.outputValidator.validateThreatAnalysis(response.content, version, {
+        provider: response.provider,
+        model: response.model,
+        tokensUsed: response.tokensUsed,
+      });
     } catch (err: any) {
       this.handleAiError('analyzeThreat', err);
     }
@@ -243,15 +240,11 @@ export class AiService {
         temperature: 0.2,
       });
 
-      return this.outputValidator.validateMessageAnalysis(
-        response.content,
-        version,
-        {
-          provider: response.provider,
-          model: response.model,
-          tokensUsed: response.tokensUsed,
-        },
-      );
+      return this.outputValidator.validateMessageAnalysis(response.content, version, {
+        provider: response.provider,
+        model: response.model,
+        tokensUsed: response.tokensUsed,
+      });
     } catch (err: any) {
       this.handleAiError('analyzeMessage', err);
     }
@@ -268,7 +261,11 @@ export class AiService {
         candidate = 'https://' + candidate;
       }
       parsedUrl = new URL(candidate);
-      if (!parsedUrl.hostname || !parsedUrl.hostname.includes('.') || parsedUrl.hostname.length < 4) {
+      if (
+        !parsedUrl.hostname ||
+        !parsedUrl.hostname.includes('.') ||
+        parsedUrl.hostname.length < 4
+      ) {
         throw new Error('Invalid domain');
       }
     } catch {
@@ -279,7 +276,29 @@ export class AiService {
     const domain = parsedUrl.hostname;
     const protocol = parsedUrl.protocol;
 
-    const { version, prompt } = this.promptRegistry.buildUrlAnalysisPrompt(normalizedUrl, domain);
+    let externalThreatIntel: any = undefined;
+    if (this.threatIntelService) {
+      try {
+        const intelResult = await this.threatIntelService.queryUrl(normalizedUrl);
+        if (intelResult && intelResult.verdict !== 'UNAVAILABLE') {
+          externalThreatIntel = {
+            sourceDisplayName: intelResult.sourceDisplayName,
+            verdict: intelResult.verdict,
+            threatType: intelResult.threatType,
+            severity: intelResult.severity,
+            summary: intelResult.summary,
+          };
+        }
+      } catch (err: any) {
+        this.logger.warn(`Threat intelligence check failed during analyzeUrl: ${err.message}`);
+      }
+    }
+
+    const { version, prompt } = this.promptRegistry.buildUrlAnalysisPrompt(
+      normalizedUrl,
+      domain,
+      externalThreatIntel,
+    );
 
     try {
       const response = await this.aiProvider.generateStructured<any>({
@@ -288,7 +307,7 @@ export class AiService {
         temperature: 0.2,
       });
 
-      return this.outputValidator.validateUrlAnalysis(
+      const validated = this.outputValidator.validateUrlAnalysis(
         response.content,
         normalizedUrl,
         domain,
@@ -300,6 +319,16 @@ export class AiService {
           tokensUsed: response.tokensUsed,
         },
       );
+
+      // If verified external threat intel identified a malicious site, ensure attribution reflects external source
+      if (externalThreatIntel?.verdict === 'MALICIOUS') {
+        validated.sourceAttribution = `${externalThreatIntel.sourceDisplayName} + Sentinel AI Orchestrator`;
+        if (validated.riskLevel !== 'HIGH') {
+          validated.riskLevel = 'HIGH';
+        }
+      }
+
+      return validated;
     } catch (err: any) {
       this.handleAiError('analyzeUrl', err);
     }
@@ -334,15 +363,11 @@ export class AiService {
         temperature: 0.2,
       });
 
-      return this.outputValidator.validateScreenshotAnalysis(
-        response.content,
-        version,
-        {
-          provider: response.provider,
-          model: response.model,
-          tokensUsed: response.tokensUsed,
-        },
-      );
+      return this.outputValidator.validateScreenshotAnalysis(response.content, version, {
+        provider: response.provider,
+        model: response.model,
+        tokensUsed: response.tokensUsed,
+      });
     } catch (err: any) {
       this.handleAiError('analyzeScreenshot', err);
     }

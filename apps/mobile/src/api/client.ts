@@ -11,8 +11,10 @@ import type {
   ScreenshotAnalyzerResult,
   MessageAnalyzerResult,
   UrlAnalysisResult,
+  ThreatIntelResult,
+  ThreatProviderDescriptor,
+  QueryThreatIntelInput,
 } from '@sentinel/types';
-
 
 // Android emulator uses 10.0.2.2 to reach host; iOS simulator uses localhost
 const getBaseUrl = (): string => {
@@ -39,10 +41,7 @@ class ApiClient {
     return this.accessToken;
   }
 
-  private async request<T>(
-    path: string,
-    options: RequestInit = {},
-  ): Promise<ApiResponse<T>> {
+  private async request<T>(path: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...(options.headers as Record<string, string>),
@@ -71,11 +70,7 @@ class ApiClient {
       return data;
     } catch (error) {
       if (error instanceof ApiError) throw error;
-      throw new ApiError(
-        'Network error — is the backend running?',
-        0,
-        'NETWORK_ERROR',
-      );
+      throw new ApiError('Network error — is the backend running?', 0, 'NETWORK_ERROR');
     }
   }
 
@@ -203,11 +198,54 @@ class ApiClient {
     });
   }
 
+  // ── Phase 8: Threat Intelligence ────────
+  async queryThreatIntel(input: QueryThreatIntelInput) {
+    return this.request<ThreatIntelResult>('/threat-intel/query', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async queryUrlThreat(url: string, forceRefresh?: boolean) {
+    return this.request<ThreatIntelResult>('/threat-intel/url', {
+      method: 'POST',
+      body: JSON.stringify({ url, forceRefresh }),
+    });
+  }
+
+  async queryDomainThreat(domain: string, forceRefresh?: boolean) {
+    return this.request<ThreatIntelResult>('/threat-intel/domain', {
+      method: 'POST',
+      body: JSON.stringify({ domain, forceRefresh }),
+    });
+  }
+
+  async queryCveThreat(cveId: string, forceRefresh?: boolean) {
+    return this.request<ThreatIntelResult>('/threat-intel/cve', {
+      method: 'POST',
+      body: JSON.stringify({ cveId, forceRefresh }),
+    });
+  }
+
+  async queryExposureThreat(
+    indicator: string,
+    indicatorType: 'DOMAIN' | 'CVE' | 'SOFTWARE' = 'CVE',
+    forceRefresh?: boolean,
+  ) {
+    return this.request<ThreatIntelResult>('/threat-intel/exposure', {
+      method: 'POST',
+      body: JSON.stringify({ indicator, indicatorType, forceRefresh }),
+    });
+  }
+
+  async getThreatIntelProviders() {
+    return this.request<ThreatProviderDescriptor[]>('/threat-intel/providers');
+  }
+
   // ── Health ──────────────────────────────
   async healthCheck() {
     return this.request<any>('/health');
   }
-
 }
 
 export class ApiError extends Error {
