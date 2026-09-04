@@ -1,8 +1,7 @@
-import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { IsNotEmpty, IsUUID } from 'class-validator';
 
 export class SecurityAdvisorDto {
-  @IsString()
+  @IsUUID()
   @IsNotEmpty()
-  @MaxLength(100)
   deviceId!: string;
 }

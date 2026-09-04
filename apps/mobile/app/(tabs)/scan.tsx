@@ -20,11 +20,36 @@ import type { ScanProgress } from '../../src/types/security';
 type ScanScreenState = 'idle' | 'scanning' | 'result' | 'report' | 'fullReport' | 'error';
 
 const SCAN_STAGES = [
-  { id: '1', name: 'Device Baseline', detail: 'Detecting manufacturer, model, OS version and hardware baseline', status: 'pending' as const },
-  { id: '2', name: 'Operating System & Security', detail: 'Inspecting keyguard, encryption, developer settings and security patch', status: 'pending' as const },
-  { id: '3', name: 'Application & Permissions', detail: 'Discovering visible packages and permission declarations within platform limits', status: 'pending' as const },
-  { id: '4', name: 'Network & Connectivity', detail: 'Checking network status, transports, and active VPN detection', status: 'pending' as const },
-  { id: '5', name: 'Capabilities & Synchronization', detail: 'Normalizing evidence provenance and synchronizing with backend', status: 'pending' as const },
+  {
+    id: '1',
+    name: 'Device Baseline',
+    detail: 'Detecting manufacturer, model, OS version and hardware baseline',
+    status: 'pending' as const,
+  },
+  {
+    id: '2',
+    name: 'Operating System & Security',
+    detail: 'Inspecting keyguard, encryption, developer settings and security patch',
+    status: 'pending' as const,
+  },
+  {
+    id: '3',
+    name: 'Application & Permissions',
+    detail: 'Discovering visible packages and permission declarations within platform limits',
+    status: 'pending' as const,
+  },
+  {
+    id: '4',
+    name: 'Network & Connectivity',
+    detail: 'Checking network status, transports, and active VPN detection',
+    status: 'pending' as const,
+  },
+  {
+    id: '5',
+    name: 'Capabilities & Synchronization',
+    detail: 'Normalizing evidence provenance and synchronizing with backend',
+    status: 'pending' as const,
+  },
 ];
 
 export default function ScanScreen() {
@@ -71,7 +96,8 @@ export default function ScanScreen() {
       }
       return { ...stage, status: 'pending' as const };
     }),
-    checksCompleted: inspectionResult?.rawEvidence.length || Math.min(Math.floor((progressVal / 100) * 12), 12),
+    checksCompleted:
+      inspectionResult?.rawEvidence.length || Math.min(Math.floor((progressVal / 100) * 12), 12),
     totalChecks: 12,
     isScanning: screenState === 'scanning',
   };
@@ -81,11 +107,18 @@ export default function ScanScreen() {
       <ScreenContainer>
         <ScreenHeader title="Scan Failed" subtitle="Device inspection encountered an error" />
         <Card variant="elevated" padding="lg" style={styles.resultCard}>
-          <View style={[styles.successIconCircle, { borderColor: '#FCA5A5', backgroundColor: '#FEE2E2' }]}>
+          <View
+            style={[
+              styles.successIconCircle,
+              { borderColor: '#FCA5A5', backgroundColor: '#FEE2E2' },
+            ]}
+          >
             <Icon name="alert-triangle" size={36} color="#DC2626" />
           </View>
           <Text style={styles.resultTitle}>Inspection Interrupted</Text>
-          <Text style={styles.resultSubtitle}>{errorMessage || 'An unexpected platform error occurred.'}</Text>
+          <Text style={styles.resultSubtitle}>
+            {errorMessage || 'An unexpected platform error occurred.'}
+          </Text>
           <PrimaryButton
             title="Retry Scan"
             onPress={handleStartScan}
@@ -144,9 +177,12 @@ export default function ScanScreen() {
               </View>
               <Text style={styles.evidenceSource}>API Source: {item.source}</Text>
               <Text style={styles.evidenceValue}>
-                Value: {typeof item.value === 'object' ? JSON.stringify(item.value) : String(item.value)}
+                Value:{' '}
+                {typeof item.value === 'object' ? JSON.stringify(item.value) : String(item.value)}
               </Text>
-              {item.notes ? <Text style={styles.evidenceNotes}>Limitation: {item.notes}</Text> : null}
+              {item.notes ? (
+                <Text style={styles.evidenceNotes}>Limitation: {item.notes}</Text>
+              ) : null}
             </Card>
           ))}
           <PrimaryButton
@@ -188,7 +224,10 @@ export default function ScanScreen() {
 
     return (
       <ScreenContainer>
-        <ScreenHeader title="Inspection Completed" subtitle="Deterministic security intelligence evaluated" />
+        <ScreenHeader
+          title="Inspection Completed"
+          subtitle="Deterministic security intelligence evaluated"
+        />
 
         {/* Phase 5 Security Score & Status Card */}
         <Card variant="elevated" padding="lg" style={styles.resultCard}>
@@ -255,7 +294,8 @@ export default function ScanScreen() {
               <Text style={styles.catName}>Operating System</Text>
             </View>
             <Text style={styles.catChecks}>
-              Android {inspectionResult.deviceInfo.osVersion} ({inspectionResult.deviceInfo.securityPatch || 'Patch unexposed'})
+              Android {inspectionResult.deviceInfo.osVersion} (
+              {inspectionResult.deviceInfo.securityPatch || 'Patch unexposed'})
             </Text>
           </View>
 
@@ -265,7 +305,15 @@ export default function ScanScreen() {
               <Text style={styles.catName}>Screen Lock & Storage</Text>
             </View>
             <Text style={styles.catChecks}>
-              {inspectionResult.systemSignals['security.screen_lock']?.value ? 'Configured' : 'Disabled'} · {String(inspectionResult.systemSignals['security.storage_encryption']?.value ? 'Encrypted' : 'Unencrypted')}
+              {inspectionResult.systemSignals['security.screen_lock']?.value
+                ? 'Configured'
+                : 'Disabled'}{' '}
+              ·{' '}
+              {String(
+                inspectionResult.systemSignals['security.storage_encryption']?.value
+                  ? 'Encrypted'
+                  : 'Unencrypted',
+              )}
             </Text>
           </View>
 
@@ -275,7 +323,8 @@ export default function ScanScreen() {
               <Text style={styles.catName}>Applications & Permissions</Text>
             </View>
             <Text style={styles.catChecks}>
-              {inspectionResult.applicationDiscovery.totalDiscovered} Inspected ({report?.categoryScores?.['APPLICATIONS']?.score ?? 100} pts)
+              {inspectionResult.applicationDiscovery.totalDiscovered} Inspected (
+              {report?.categoryScores?.['APPLICATIONS']?.score ?? 100} pts)
             </Text>
           </View>
 
@@ -285,7 +334,13 @@ export default function ScanScreen() {
               <Text style={styles.catName}>Network & Transport</Text>
             </View>
             <Text style={styles.catChecks}>
-              {(inspectionResult.networkSignals['network.connectivity']?.value as any)?.isConnected ? 'Connected' : 'Offline'} · VPN: {inspectionResult.networkSignals['network.vpn_transport']?.value ? 'Active' : 'Inactive'}
+              {(inspectionResult.networkSignals['network.connectivity']?.value as any)?.isConnected
+                ? 'Connected'
+                : 'Offline'}{' '}
+              · VPN:{' '}
+              {inspectionResult.networkSignals['network.vpn_transport']?.value
+                ? 'Active'
+                : 'Inactive'}
             </Text>
           </View>
         </View>
@@ -340,7 +395,9 @@ export default function ScanScreen() {
 
       {/* Start Button */}
       <PrimaryButton
-        title={scanType === 'quick' ? 'Start Quick Scan (~2s)' : 'Start Full Device Inspection (~5s)'}
+        title={
+          scanType === 'quick' ? 'Start Quick Scan (~2s)' : 'Start Full Device Inspection (~5s)'
+        }
         onPress={handleStartScan}
         icon="scan"
         size="lg"
@@ -350,7 +407,8 @@ export default function ScanScreen() {
       {/* Transparency Note */}
       <View style={styles.transparencyBox}>
         <Text style={styles.transparencyText}>
-          Sentinel inspects only authorized OS configurations and application signals. Private messages, photos, files, and credentials are never accessed, altered, or transferred.
+          Sentinel inspects only authorized OS configurations and application signals. Private
+          messages, photos, files, and credentials are never accessed, altered, or transferred.
         </Text>
       </View>
     </ScreenContainer>

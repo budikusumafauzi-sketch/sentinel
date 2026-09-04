@@ -8,7 +8,9 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter(),
+    new FastifyAdapter({
+      bodyLimit: 10485760, // 10MB max payload limit
+    }),
   );
 
   // Global exception filter
@@ -32,26 +34,19 @@ async function bootstrap() {
   );
 
   // CORS
-  await app.register(
-    (await import('@fastify/cors')).default as any,
-    {
-      origin: process.env.NODE_ENV === 'production'
-        ? false
-        : true,
-      credentials: true,
-    },
-  );
+  await app.register((await import('@fastify/cors')).default as any, {
+    origin: process.env.NODE_ENV === 'production' ? false : true,
+    credentials: true,
+  });
 
   // Security headers
-  await app.register(
-    (await import('@fastify/helmet')).default as any,
-    {
-      contentSecurityPolicy: false,
-    },
-  );
+  await app.register((await import('@fastify/helmet')).default as any, {
+    contentSecurityPolicy: false,
+  });
 
   // Request body size limit
-  app.getHttpAdapter()
+  app
+    .getHttpAdapter()
     .getInstance()
     .addHook('onRequest', (_req: any, _reply: any, done: () => void) => {
       done();

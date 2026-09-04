@@ -81,16 +81,13 @@ export function calculateRiskScore(
   const A = Math.min(5, Math.max(1, dimensions.assetCriticality));
   const C = Math.min(5, Math.max(1, dimensions.controlGap));
 
-  const rawWeighted =
-    0.4 * S +
-    0.15 * I +
-    0.15 * L +
-    0.1 * E +
-    0.1 * A +
-    0.1 * C;
+  const rawWeighted = 0.4 * S + 0.15 * I + 0.15 * L + 0.1 * E + 0.1 * A + 0.1 * C;
 
   const weighted = Math.round(rawWeighted * 10000) / 10000;
-  const rawRisk = Math.min(100, Math.max(0, Math.round((((weighted - 1) / 4) * 100) * 10000) / 10000));
+  const rawRisk = Math.min(
+    100,
+    Math.max(0, Math.round(((weighted - 1) / 4) * 100 * 10000) / 10000),
+  );
 
   const clampedConfidence = Math.min(1.0, Math.max(0.0, confidence));
 

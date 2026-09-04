@@ -139,8 +139,8 @@ describe('OutputValidator (Security Boundary & Schema Validation)', () => {
 
       expect(result.recommendations).toHaveLength(1);
       // Fabricated finding ID was filtered out
-      expect(result.recommendations[0].affectedFindingId).toBeUndefined();
-      expect(result.recommendations[0].priority).toBe('HIGH');
+      expect(result.recommendations[0]?.affectedFindingId).toBeUndefined();
+      expect(result.recommendations[0]?.priority).toBe('HIGH');
     });
 
     it('rejects invalid priority enums in recommendations', () => {
@@ -185,11 +185,10 @@ describe('OutputValidator (Security Boundary & Schema Validation)', () => {
         limitations: ['Text only'],
       };
 
-      const result = validator.validateThreatAnalysis(
-        raw,
-        PROMPT_VERSIONS.THREAT_ANALYZER,
-        { provider: 'mock', model: 'mock' },
-      );
+      const result = validator.validateThreatAnalysis(raw, PROMPT_VERSIONS.THREAT_ANALYZER, {
+        provider: 'mock',
+        model: 'mock',
+      });
 
       expect(result.classification).toBe('SUSPICIOUS');
       expect(result.confidence).toBe(0.85);
@@ -208,11 +207,10 @@ describe('OutputValidator (Security Boundary & Schema Validation)', () => {
       };
 
       expect(() => {
-        validator.validateThreatAnalysis(
-          raw,
-          PROMPT_VERSIONS.THREAT_ANALYZER,
-          { provider: 'mock', model: 'mock' },
-        );
+        validator.validateThreatAnalysis(raw, PROMPT_VERSIONS.THREAT_ANALYZER, {
+          provider: 'mock',
+          model: 'mock',
+        });
       }).toThrow(OutputValidationError);
     });
   });
@@ -230,11 +228,10 @@ describe('OutputValidator (Security Boundary & Schema Validation)', () => {
         limitations: ['Headers not checked'],
       };
 
-      const result = validator.validateMessageAnalysis(
-        raw,
-        PROMPT_VERSIONS.MESSAGE_ANALYZER,
-        { provider: 'mock', model: 'mock' },
-      );
+      const result = validator.validateMessageAnalysis(raw, PROMPT_VERSIONS.MESSAGE_ANALYZER, {
+        provider: 'mock',
+        model: 'mock',
+      });
 
       expect(result.classification).toBe('PHISHING');
       expect(result.urgencyTacticsDetected).toBe(true);

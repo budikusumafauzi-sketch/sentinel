@@ -1,4 +1,12 @@
-import { IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength, IsBoolean } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+  IsBoolean,
+  Matches,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { ThreatIntelType } from '@sentinel/types';
 
@@ -56,6 +64,7 @@ export class DomainThreatDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(253)
+  @Matches(/^[a-zA-Z0-9.\-_:]+$/, { message: 'Domain contains invalid characters' })
   domain!: string;
 
   @ApiPropertyOptional({
@@ -75,6 +84,7 @@ export class CveThreatDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(32)
+  @Matches(/^CVE-\d{4}-\d{4,8}$/i, { message: 'Invalid CVE ID format' })
   cveId!: string;
 
   @ApiPropertyOptional({

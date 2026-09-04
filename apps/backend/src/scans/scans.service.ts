@@ -249,7 +249,9 @@ export class ScansService {
 
       // 3. Persist Recommendations
       for (const rec of execution.recommendations) {
-        const findingId = rec.findingFingerprint ? createdFindingMap.get(rec.findingFingerprint) : undefined;
+        const findingId = rec.findingFingerprint
+          ? createdFindingMap.get(rec.findingFingerprint)
+          : undefined;
         await tx.recommendation.create({
           data: {
             findingId: findingId ?? null,

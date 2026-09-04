@@ -56,11 +56,19 @@ export const CATEGORY_KEY_MAP: Record<CanonicalCategory, CanonicalCategoryKey> =
 export function toCanonicalCategory(category: string): CanonicalCategory {
   const upper = (category || '').toUpperCase().trim();
   if (upper === 'DEVICE') return 'DEVICE';
-  if (upper === 'APPLICATIONS' || upper === 'APPLICATION' || upper === 'APPS') return 'APPLICATIONS';
+  if (upper === 'APPLICATIONS' || upper === 'APPLICATION' || upper === 'APPS')
+    return 'APPLICATIONS';
   if (upper === 'ACCOUNTS' || upper === 'ACCOUNT') return 'ACCOUNTS';
   if (upper === 'PRIVACY') return 'PRIVACY';
   if (upper === 'NETWORK') return 'NETWORK';
-  if (upper === 'SYSTEM' || upper === 'OS' || upper === 'UPDATE' || upper === 'CONFIGURATION' || upper === 'ENCRYPTION' || upper === 'AUTHENTICATION') {
+  if (
+    upper === 'SYSTEM' ||
+    upper === 'OS' ||
+    upper === 'UPDATE' ||
+    upper === 'CONFIGURATION' ||
+    upper === 'ENCRYPTION' ||
+    upper === 'AUTHENTICATION'
+  ) {
     return 'SYSTEM';
   }
   return 'DEVICE';
@@ -92,16 +100,14 @@ export function calculateCategoryScore(
   evaluatedControls: number,
 ): { categoryScore: CategoryScoreResult; contributions: FindingContribution[] } {
   const categoryKey = CATEGORY_KEY_MAP[category];
-  const relevantFindings = findings.filter(
-    (f) => f.category === category && f.status === 'ACTIVE',
-  );
+  const relevantFindings = findings.filter((f) => f.category === category && f.status === 'ACTIVE');
 
   let totalPenalty = 0;
   const contributions: FindingContribution[] = [];
 
   for (const f of relevantFindings) {
     const basePenalty = BASE_PENALTIES[f.severity] ?? 5;
-    const penalty = Math.round((basePenalty * (f.riskScore / 100)) * 100) / 100;
+    const penalty = Math.round(basePenalty * (f.riskScore / 100) * 100) / 100;
     totalPenalty += penalty;
 
     contributions.push({
@@ -174,7 +180,8 @@ export function calculateSecurityScore(
   }
 
   const totalAttempted = totalEvaluatedControls + unavailableCheckCount;
-  const coverageRatio = totalAttempted > 0 ? Math.round((totalEvaluatedControls / totalAttempted) * 100) / 100 : 0;
+  const coverageRatio =
+    totalAttempted > 0 ? Math.round((totalEvaluatedControls / totalAttempted) * 100) / 100 : 0;
 
   return {
     score: finalScore,

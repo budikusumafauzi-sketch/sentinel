@@ -43,10 +43,7 @@ describe('Gemini Provider & Real Integration Verification (Section 28)', () => {
   let validator: OutputValidator;
   let promptRegistry: PromptRegistry;
 
-  const apiKey =
-    process.env.SENTINEL_GEMINI_API_KEY ||
-    process.env.GEMINI_API_KEY ||
-    null;
+  const apiKey = process.env.SENTINEL_GEMINI_API_KEY || process.env.GEMINI_API_KEY || null;
 
   beforeAll(() => {
     configService = new ConfigService();
@@ -94,15 +91,11 @@ describe('Gemini Provider & Real Integration Verification (Section 28)', () => {
         expect(response.content).toBeDefined();
         expect(response.provider).toBe('gemini');
 
-        const validated = validator.validateThreatAnalysis(
-          response.content,
-          version,
-          {
-            provider: response.provider,
-            model: response.model,
-            tokensUsed: response.tokensUsed,
-          },
-        );
+        const validated = validator.validateThreatAnalysis(response.content, version, {
+          provider: response.provider,
+          model: response.model,
+          tokensUsed: response.tokensUsed,
+        });
 
         expect(validated.promptVersion).toBe('THREAT_ANALYZER_V1');
         expect(['SUSPICIOUS', 'MALICIOUS', 'PHISHING', 'UNKNOWN', 'BENIGN']).toContain(

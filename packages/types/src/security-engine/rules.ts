@@ -57,7 +57,8 @@ export const ruleScreenLock: SecurityRule = {
         rulesetVersion: RULESET_VERSION,
         category: 'DEVICE',
         title: 'Device Screen Lock Disabled',
-        description: 'Physical security check verified that no secure screen lock (PIN, password, or pattern) is configured.',
+        description:
+          'Physical security check verified that no secure screen lock (PIN, password, or pattern) is configured.',
         severity: 'HIGH',
         dimensions,
         assetKey: 'keyguard',
@@ -70,10 +71,12 @@ export const ruleScreenLock: SecurityRule = {
             trustState: ev.trustState,
           },
         ],
-        explanation: 'Without a configured screen lock, anyone with physical access to the device can freely read personal messages, access stored credentials, and modify security settings.',
+        explanation:
+          'Without a configured screen lock, anyone with physical access to the device can freely read personal messages, access stored credentials, and modify security settings.',
         recommendation: {
           title: 'Configure Secure Screen Lock',
-          description: 'Open device Security settings and set up a PIN, strong password, or pattern lock with biometric authentication.',
+          description:
+            'Open device Security settings and set up a PIN, strong password, or pattern lock with biometric authentication.',
           actionUrl: 'settings://security',
         },
       };
@@ -91,7 +94,8 @@ export const ruleStorageEncryption: SecurityRule = {
   rulesetVersion: RULESET_VERSION,
   category: 'DEVICE',
   title: 'Device Storage Encryption Disabled',
-  description: 'Internal device storage is not encrypted, leaving stored files vulnerable to offline extraction.',
+  description:
+    'Internal device storage is not encrypted, leaving stored files vulnerable to offline extraction.',
   defaultSeverity: 'CRITICAL',
   requiredCheckIds: ['security.storage_encryption'],
   platformApplicability: ['ANDROID', 'IOS', 'WINDOWS', 'MACOS', 'LINUX'],
@@ -137,10 +141,12 @@ export const ruleStorageEncryption: SecurityRule = {
             trustState: ev.trustState,
           },
         ],
-        explanation: 'Unencrypted storage allows attackers with physical or recovery-mode access to read all user files, photos, database records, and app data directly from flash memory.',
+        explanation:
+          'Unencrypted storage allows attackers with physical or recovery-mode access to read all user files, photos, database records, and app data directly from flash memory.',
         recommendation: {
           title: 'Enable Device Storage Encryption',
-          description: 'Navigate to Security & Privacy settings to encrypt phone storage and protect files against offline physical extraction.',
+          description:
+            'Navigate to Security & Privacy settings to encrypt phone storage and protect files against offline physical extraction.',
           actionUrl: 'settings://security/encryption',
         },
       };
@@ -198,7 +204,9 @@ export const ruleSecurityPatch: SecurityRule = {
       ruleId: 'SEC-SYS-SECURITY-PATCH',
       rulesetVersion: RULESET_VERSION,
       category: 'SYSTEM',
-      title: isHigh ? 'Security Patch Over 90 Days Outdated' : 'Security Patch Over 30 Days Outdated',
+      title: isHigh
+        ? 'Security Patch Over 90 Days Outdated'
+        : 'Security Patch Over 30 Days Outdated',
       description: `Security patch level (${patchStr}) is ${diffDays} days behind reference date.`,
       severity,
       dimensions,
@@ -215,7 +223,8 @@ export const ruleSecurityPatch: SecurityRule = {
       explanation: `Known vulnerabilities disclosed in public Android Security Bulletins remain unpatched on this device when patch levels are ${diffDays} days behind.`,
       recommendation: {
         title: 'Check for System Updates',
-        description: 'Open System Settings → System Update and install any pending security patches provided by the manufacturer.',
+        description:
+          'Open System Settings → System Update and install any pending security patches provided by the manufacturer.',
         actionUrl: 'settings://system/update',
       },
     };
@@ -239,8 +248,10 @@ export const ruleDeveloperOptions: SecurityRule = {
     const adbEv = context.evidenceMap.get('security.adb_debugging');
     const devEv = context.evidenceMap.get('security.developer_options');
 
-    const adbActive = adbEv && isEvidenceEligibleForFinding(adbEv.trustState) && adbEv.value === true;
-    const devActive = devEv && isEvidenceEligibleForFinding(devEv.trustState) && devEv.value === true;
+    const adbActive =
+      adbEv && isEvidenceEligibleForFinding(adbEv.trustState) && adbEv.value === true;
+    const devActive =
+      devEv && isEvidenceEligibleForFinding(devEv.trustState) && devEv.value === true;
 
     if (!adbActive && !devActive) return null;
 
@@ -257,7 +268,9 @@ export const ruleDeveloperOptions: SecurityRule = {
       ruleId: 'SEC-SYS-DEV-DEBUGGING',
       rulesetVersion: RULESET_VERSION,
       category: 'SYSTEM',
-      title: isEmulator ? 'USB Debugging Active (Emulator Environment)' : 'USB Debugging (ADB) Enabled',
+      title: isEmulator
+        ? 'USB Debugging Active (Emulator Environment)'
+        : 'USB Debugging (ADB) Enabled',
       description: isEmulator
         ? 'USB Debugging is enabled in an emulator/development environment.'
         : 'USB Debugging is actively enabled on a physical device, permitting external shell access.',
@@ -333,10 +346,12 @@ export const ruleUnknownSources: SecurityRule = {
             trustState: ev.trustState,
           },
         ],
-        explanation: 'Enabling unknown source installations increases risk of drive-by malware downloads and untrusted sideloaded software bypasses of store verification.',
+        explanation:
+          'Enabling unknown source installations increases risk of drive-by malware downloads and untrusted sideloaded software bypasses of store verification.',
         recommendation: {
           title: 'Restrict Unknown App Installations',
-          description: 'Navigate to Apps & Notifications → Special App Access → Install Unknown Apps and revoke install permissions for unverified apps.',
+          description:
+            'Navigate to Apps & Notifications → Special App Access → Install Unknown Apps and revoke install permissions for unverified apps.',
           actionUrl: 'settings://apps/special_access/unknown_sources',
         },
       };
@@ -366,7 +381,8 @@ export const ruleSensitiveAppPermissions: SecurityRule = {
   rulesetVersion: RULESET_VERSION,
   category: 'APPLICATIONS',
   title: 'Sensitive Permission Exposure in Installed Application',
-  description: 'A third-party application holds high-risk permissions such as SMS, Call Log, or Window Overlays.',
+  description:
+    'A third-party application holds high-risk permissions such as SMS, Call Log, or Window Overlays.',
   defaultSeverity: 'MEDIUM',
   requiredCheckIds: ['apps.inventory'],
   platformApplicability: ['ANDROID'],
@@ -430,10 +446,12 @@ export const ruleSensitiveAppPermissions: SecurityRule = {
           trustState: ev.trustState,
         },
       ],
-      explanation: 'Applications with SMS or Call Log access can read one-time authentication codes or track user communications. While legitimate apps may need these, permissions should be audited periodically.',
+      explanation:
+        'Applications with SMS or Call Log access can read one-time authentication codes or track user communications. While legitimate apps may need these, permissions should be audited periodically.',
       recommendation: {
         title: 'Review Application Permissions',
-        description: 'Review granted permissions in Settings → Privacy → Permission Manager and revoke SMS or Call permissions from non-essential apps.',
+        description:
+          'Review granted permissions in Settings → Privacy → Permission Manager and revoke SMS or Call permissions from non-essential apps.',
         actionUrl: 'settings://privacy/permissions',
       },
     };
@@ -448,7 +466,8 @@ export const ruleSideloadedApps: SecurityRule = {
   rulesetVersion: RULESET_VERSION,
   category: 'APPLICATIONS',
   title: 'Non-Store Application Installed',
-  description: 'One or more applications were installed from an untrusted or manual package installer.',
+  description:
+    'One or more applications were installed from an untrusted or manual package installer.',
   defaultSeverity: 'LOW',
   requiredCheckIds: ['apps.inventory'],
   platformApplicability: ['ANDROID'],
@@ -465,11 +484,7 @@ export const ruleSideloadedApps: SecurityRule = {
       if (app.isSystemApp) return false;
       const source = app.installSource;
       // Sources other than Google Play Store
-      return (
-        source &&
-        source !== 'com.android.vending' &&
-        source !== 'com.google.android.feedback'
-      );
+      return source && source !== 'com.android.vending' && source !== 'com.google.android.feedback';
     });
 
     if (sideloaded.length === 0) return null;
@@ -496,12 +511,16 @@ export const ruleSideloadedApps: SecurityRule = {
         {
           checkId: ev.checkId,
           checkName: ev.checkName,
-          value: { count: sideloaded.length, samplePackages: sideloaded.slice(0, 3).map((a: any) => a.packageName) },
+          value: {
+            count: sideloaded.length,
+            samplePackages: sideloaded.slice(0, 3).map((a: any) => a.packageName),
+          },
           source: ev.source,
           trustState: ev.trustState,
         },
       ],
-      explanation: 'Sideloaded applications do not receive automated Google Play Protect malware scanning and may not receive regular security updates from the developer.',
+      explanation:
+        'Sideloaded applications do not receive automated Google Play Protect malware scanning and may not receive regular security updates from the developer.',
       recommendation: {
         title: 'Audit Sideloaded Applications',
         description: 'Verify the authenticity and developers of manually installed applications.',
@@ -518,7 +537,8 @@ export const ruleWindowsFirewall: SecurityRule = {
   rulesetVersion: RULESET_VERSION,
   category: 'NETWORK',
   title: 'Windows Firewall Disabled',
-  description: 'One or more active Windows Firewall profiles (Domain, Private, or Public) are turned off.',
+  description:
+    'One or more active Windows Firewall profiles (Domain, Private, or Public) are turned off.',
   defaultSeverity: 'HIGH',
   requiredCheckIds: ['security.firewall_active'],
   platformApplicability: ['WINDOWS'],
@@ -543,7 +563,8 @@ export const ruleWindowsFirewall: SecurityRule = {
         rulesetVersion: RULESET_VERSION,
         category: 'NETWORK',
         title: 'Windows Firewall Inactive',
-        description: 'Host-based firewall protection is disabled across one or more network profiles.',
+        description:
+          'Host-based firewall protection is disabled across one or more network profiles.',
         severity: 'HIGH',
         dimensions,
         assetKey: 'firewall',
@@ -556,10 +577,12 @@ export const ruleWindowsFirewall: SecurityRule = {
             trustState: ev.trustState,
           },
         ],
-        explanation: 'Disabling the Windows Firewall leaves network ports exposed to unauthorized inbound connections and lateral movement on local networks.',
+        explanation:
+          'Disabling the Windows Firewall leaves network ports exposed to unauthorized inbound connections and lateral movement on local networks.',
         recommendation: {
           title: 'Enable Windows Defender Firewall',
-          description: 'Open Windows Security → Firewall & network protection and turn on firewall profiles for Domain, Private, and Public networks.',
+          description:
+            'Open Windows Security → Firewall & network protection and turn on firewall profiles for Domain, Private, and Public networks.',
           actionUrl: 'ms-settings:windowsdefender',
         },
       };
@@ -602,7 +625,8 @@ export const ruleWindowsAntivirus: SecurityRule = {
         rulesetVersion: RULESET_VERSION,
         category: 'SYSTEM',
         title: 'Real-Time Protection Disabled',
-        description: 'Active antivirus protection is disabled, leaving the system exposed to malicious software.',
+        description:
+          'Active antivirus protection is disabled, leaving the system exposed to malicious software.',
         severity: 'HIGH',
         dimensions,
         assetKey: 'antivirus',
@@ -615,10 +639,12 @@ export const ruleWindowsAntivirus: SecurityRule = {
             trustState: ev.trustState,
           },
         ],
-        explanation: 'Without real-time file scanning and behavioral monitoring, malware downloads and executed scripts run without automated detection.',
+        explanation:
+          'Without real-time file scanning and behavioral monitoring, malware downloads and executed scripts run without automated detection.',
         recommendation: {
           title: 'Enable Real-Time Protection',
-          description: 'Open Windows Security → Virus & threat protection → Manage settings and turn on Real-time protection.',
+          description:
+            'Open Windows Security → Virus & threat protection → Manage settings and turn on Real-time protection.',
           actionUrl: 'ms-settings:windowsdefender',
         },
       };
@@ -636,7 +662,8 @@ export const ruleWindowsUAC: SecurityRule = {
   rulesetVersion: RULESET_VERSION,
   category: 'SYSTEM',
   title: 'User Account Control (UAC) Disabled',
-  description: 'User Account Control is turned off, allowing administrative applications to elevate without user prompt.',
+  description:
+    'User Account Control is turned off, allowing administrative applications to elevate without user prompt.',
   defaultSeverity: 'MEDIUM',
   requiredCheckIds: ['security.uac_enabled'],
   platformApplicability: ['WINDOWS'],
@@ -674,10 +701,12 @@ export const ruleWindowsUAC: SecurityRule = {
             trustState: ev.trustState,
           },
         ],
-        explanation: 'Disabling UAC allows background processes to silently gain administrative privileges without displaying a security confirmation prompt.',
+        explanation:
+          'Disabling UAC allows background processes to silently gain administrative privileges without displaying a security confirmation prompt.',
         recommendation: {
           title: 'Turn On User Account Control',
-          description: 'Search for "Change User Account Control settings" in the Start menu and set the slider to the recommended notification level.',
+          description:
+            'Search for "Change User Account Control settings" in the Start menu and set the slider to the recommended notification level.',
         },
       };
     }
@@ -699,4 +728,3 @@ export const SECURITY_RULES: SecurityRule[] = [
   ruleWindowsAntivirus,
   ruleWindowsUAC,
 ];
-

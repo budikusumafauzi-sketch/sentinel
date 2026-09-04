@@ -1,4 +1,13 @@
-import { Controller, Post, Get, Param, Query, Body, UseGuards, ParseUUIDPipe } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Param,
+  Query,
+  Body,
+  UseGuards,
+  ParseUUIDPipe,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
@@ -16,10 +25,7 @@ export class RecommendationsController {
   @ApiOperation({ summary: 'Create a recommendation' })
   @ApiResponse({ status: 201, description: 'Recommendation created' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async create(
-    @CurrentUser() user: { id: string },
-    @Body() dto: CreateRecommendationDto,
-  ) {
+  async create(@CurrentUser() user: { id: string }, @Body() dto: CreateRecommendationDto) {
     const recommendation = await this.recommendationsService.create(user.id, dto);
     return {
       success: true,
@@ -63,10 +69,7 @@ export class RecommendationsController {
   @ApiOperation({ summary: 'Get a recommendation by ID' })
   @ApiResponse({ status: 200, description: 'Recommendation details' })
   @ApiResponse({ status: 404, description: 'Recommendation not found' })
-  async findOne(
-    @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() user: { id: string },
-  ) {
+  async findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: { id: string }) {
     const recommendation = await this.recommendationsService.findOne(id, user.id);
     return {
       success: true,

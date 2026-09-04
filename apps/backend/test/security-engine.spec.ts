@@ -140,7 +140,14 @@ describe('Sentinel Phase 5: Deterministic Security Engine', () => {
       // S=4, I=4, L=4, E=4, A=4, C=5
       // weighted = 0.4*4 + 0.15*4 + 0.15*4 + 0.1*4 + 0.1*4 + 0.1*5 = 1.6 + 0.6 + 0.6 + 0.4 + 0.4 + 0.5 = 4.1
       // rawRisk = ((4.1 - 1) / 4) * 100 = 77.5
-      const dims = { severity: 4, impact: 4, likelihood: 4, exposure: 4, assetCriticality: 4, controlGap: 5 };
+      const dims = {
+        severity: 4,
+        impact: 4,
+        likelihood: 4,
+        exposure: 4,
+        assetCriticality: 4,
+        controlGap: 5,
+      };
 
       const calc100 = calculateRiskScore(dims, 1.0);
       // riskScore = round(77.5 * 1.0) = 78
@@ -161,13 +168,27 @@ describe('Sentinel Phase 5: Deterministic Security Engine', () => {
 
     it('clamps risk score strictly to 0–100', () => {
       const calcOver = calculateRiskScore(
-        { severity: 10, impact: 10, likelihood: 10, exposure: 10, assetCriticality: 10, controlGap: 10 },
+        {
+          severity: 10,
+          impact: 10,
+          likelihood: 10,
+          exposure: 10,
+          assetCriticality: 10,
+          controlGap: 10,
+        },
         2.0,
       );
       expect(calcOver.riskScore).toBeLessThanOrEqual(100);
 
       const calcUnder = calculateRiskScore(
-        { severity: -5, impact: -5, likelihood: -5, exposure: -5, assetCriticality: -5, controlGap: -5 },
+        {
+          severity: -5,
+          impact: -5,
+          likelihood: -5,
+          exposure: -5,
+          assetCriticality: -5,
+          controlGap: -5,
+        },
         -1.0,
       );
       expect(calcUnder.riskScore).toBeGreaterThanOrEqual(0);
@@ -231,7 +252,14 @@ describe('Sentinel Phase 5: Deterministic Security Engine', () => {
         riskScore: 80,
         priority: 'HIGH',
         rawRisk: 80,
-        dimensions: { severity: 4, impact: 4, likelihood: 4, exposure: 4, assetCriticality: 4, controlGap: 5 },
+        dimensions: {
+          severity: 4,
+          impact: 4,
+          likelihood: 4,
+          exposure: 4,
+          assetCriticality: 4,
+          controlGap: 5,
+        },
         evidence: [],
         explanation: 'Screen lock disabled',
         recommendationText: 'Set a screen lock',
@@ -352,7 +380,9 @@ describe('Sentinel Phase 5: Deterministic Security Engine', () => {
         rawEvidence: [freshPatch],
         evaluationDate: evalDate,
       });
-      expect(freshRes.findings.filter((f) => f.ruleId === 'SEC-SYS-SECURITY-PATCH')).toHaveLength(0);
+      expect(freshRes.findings.filter((f) => f.ruleId === 'SEC-SYS-SECURITY-PATCH')).toHaveLength(
+        0,
+      );
 
       // 2. 31–90 days -> MEDIUM
       const midPatch: EvidenceItem = {
@@ -465,13 +495,19 @@ describe('Sentinel Phase 5: Deterministic Security Engine', () => {
                 name: 'System Dialer',
                 packageName: 'com.android.dialer',
                 isSystemApp: true,
-                grantedPermissions: ['android.permission.READ_SMS', 'android.permission.PROCESS_OUTGOING_CALLS'],
+                grantedPermissions: [
+                  'android.permission.READ_SMS',
+                  'android.permission.PROCESS_OUTGOING_CALLS',
+                ],
               },
               {
                 name: 'Custom Utility App',
                 packageName: 'com.custom.utility',
                 isSystemApp: false,
-                grantedPermissions: ['android.permission.READ_SMS', 'android.permission.RECEIVE_SMS'],
+                grantedPermissions: [
+                  'android.permission.READ_SMS',
+                  'android.permission.RECEIVE_SMS',
+                ],
               },
             ],
           },
@@ -528,7 +564,14 @@ describe('Sentinel Phase 5: Deterministic Security Engine', () => {
         riskScore: 78,
         priority: 'HIGH',
         rawRisk: 78,
-        dimensions: { severity: 4, impact: 4, likelihood: 4, exposure: 4, assetCriticality: 4, controlGap: 5 },
+        dimensions: {
+          severity: 4,
+          impact: 4,
+          likelihood: 4,
+          exposure: 4,
+          assetCriticality: 4,
+          controlGap: 5,
+        },
         evidence: [],
         explanation: 'Disabled',
         recommendationText: 'Set a lock',
@@ -538,7 +581,11 @@ describe('Sentinel Phase 5: Deterministic Security Engine', () => {
       const currentFindings: EngineFinding[] = [];
       const evaluatedRuleIds = new Set<string>(['SEC-SYS-SCREEN-LOCK']);
 
-      const reconciled = reconcileFindingLifecycle(currentFindings, [previousFinding], evaluatedRuleIds);
+      const reconciled = reconcileFindingLifecycle(
+        currentFindings,
+        [previousFinding],
+        evaluatedRuleIds,
+      );
 
       expect(reconciled).toHaveLength(1);
       expect(reconciled[0]!.fingerprint).toBe(previousFinding.fingerprint);
@@ -568,7 +615,14 @@ describe('Sentinel Phase 5: Deterministic Security Engine', () => {
           riskScore: 78,
           priority: 'HIGH',
           rawRisk: 78,
-          dimensions: { severity: 4, impact: 4, likelihood: 4, exposure: 4, assetCriticality: 4, controlGap: 5 },
+          dimensions: {
+            severity: 4,
+            impact: 4,
+            likelihood: 4,
+            exposure: 4,
+            assetCriticality: 4,
+            controlGap: 5,
+          },
           evidence: [],
           explanation: 'Disabled',
           recommendationText: 'Configure a secure PIN or password in settings.',
@@ -598,7 +652,14 @@ describe('Sentinel Phase 5: Deterministic Security Engine', () => {
         riskScore: 78,
         priority: 'HIGH',
         rawRisk: 78,
-        dimensions: { severity: 4, impact: 4, likelihood: 4, exposure: 4, assetCriticality: 4, controlGap: 5 },
+        dimensions: {
+          severity: 4,
+          impact: 4,
+          likelihood: 4,
+          exposure: 4,
+          assetCriticality: 4,
+          controlGap: 5,
+        },
         evidence: [],
         explanation: 'Disabled',
         recommendationText: 'Set lock',
@@ -609,7 +670,14 @@ describe('Sentinel Phase 5: Deterministic Security Engine', () => {
       expect(newEvents.some((e) => e.type === 'NEW_FINDING')).toBe(true);
 
       // 2. Unchanged scan: same finding, same score -> 0 events
-      const noEvents = generateSecurityEvents('scan-3', mockDeviceId, [finding1], [finding1], 78, 78);
+      const noEvents = generateSecurityEvents(
+        'scan-3',
+        mockDeviceId,
+        [finding1],
+        [finding1],
+        78,
+        78,
+      );
       expect(noEvents).toHaveLength(0);
 
       // 3. Finding resolved
@@ -634,7 +702,13 @@ describe('Sentinel Phase 5: Deterministic Security Engine', () => {
 
       // Score improved to 95
       const breakdown95 = { ...breakdown75, score: 95 };
-      const histImproved = generateSecurityHistory('scan-2', mockDeviceId, breakdown95, [], histInitial);
+      const histImproved = generateSecurityHistory(
+        'scan-2',
+        mockDeviceId,
+        breakdown95,
+        [],
+        histInitial,
+      );
       expect(histImproved.trend).toBe('IMPROVING');
       expect(histImproved.scoreDelta).toBe(20);
     });
@@ -892,4 +966,3 @@ describe('Sentinel Phase 5: Deterministic Security Engine', () => {
     });
   });
 });
-

@@ -63,7 +63,9 @@ export interface SentinelDeviceIntelligenceNative {
   getCapabilities(): Promise<Record<string, string>>;
 }
 
-const NativeModule = requireOptionalNativeModule<SentinelDeviceIntelligenceNative>('SentinelDeviceIntelligence');
+const NativeModule = requireOptionalNativeModule<SentinelDeviceIntelligenceNative>(
+  'SentinelDeviceIntelligence',
+);
 
 export const SentinelDeviceIntelligence = {
   isAvailable(): boolean {

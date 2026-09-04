@@ -43,7 +43,9 @@ describe('Sentinel Phase 5: Mobile Security Engine Integration', () => {
 
       const categories = securityStore.getCategories();
       expect(categories.length).toBe(6);
-      expect(categories.every((c) => c.statusLabel === 'Not Evaluated' || c.checksCount >= 0)).toBe(true);
+      expect(categories.every((c) => c.statusLabel === 'Not Evaluated' || c.checksCount >= 0)).toBe(
+        true,
+      );
     });
 
     it('updates state accurately when CompleteScanReport is loaded', () => {

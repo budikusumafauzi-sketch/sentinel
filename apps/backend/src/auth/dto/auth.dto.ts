@@ -26,5 +26,6 @@ export class LoginDto {
 
   @ApiProperty({ example: 'StrongP@ss1' })
   @IsString()
+  @MaxLength(128)
   password: string;
 }

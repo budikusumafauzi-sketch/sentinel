@@ -177,16 +177,16 @@ describe('ScansService — Evidence Synchronization', () => {
       deviceId: mockDeviceId,
     });
 
-    await expect(
-      service.syncEvidence(mockScanId, mockUserId, mockEvidenceDto),
-    ).rejects.toThrow(ForbiddenException);
+    await expect(service.syncEvidence(mockScanId, mockUserId, mockEvidenceDto)).rejects.toThrow(
+      ForbiddenException,
+    );
   });
 
   it('should throw NotFoundException if scan does not exist', async () => {
     prisma.scan.findUnique.mockResolvedValue(null);
 
-    await expect(
-      service.syncEvidence(mockScanId, mockUserId, mockEvidenceDto),
-    ).rejects.toThrow(NotFoundException);
+    await expect(service.syncEvidence(mockScanId, mockUserId, mockEvidenceDto)).rejects.toThrow(
+      NotFoundException,
+    );
   });
 });

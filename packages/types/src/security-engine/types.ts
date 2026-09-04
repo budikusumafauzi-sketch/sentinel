@@ -6,20 +6,10 @@ import type { DevicePlatform } from '../index';
 
 /** Canonical 6 Security Categories per PRD & Phase 5 specifications */
 export type CanonicalCategory =
-  | 'DEVICE'
-  | 'APPLICATIONS'
-  | 'ACCOUNTS'
-  | 'PRIVACY'
-  | 'NETWORK'
-  | 'SYSTEM';
+  'DEVICE' | 'APPLICATIONS' | 'ACCOUNTS' | 'PRIVACY' | 'NETWORK' | 'SYSTEM';
 
 export type CanonicalCategoryKey =
-  | 'device'
-  | 'applications'
-  | 'accounts'
-  | 'privacy'
-  | 'network'
-  | 'system';
+  'device' | 'applications' | 'accounts' | 'privacy' | 'network' | 'system';
 
 /** Severity model: CRITICAL=5, HIGH=4, MEDIUM=3, LOW=2 */
 export type EngineSeverity = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
@@ -30,20 +20,20 @@ export type FindingLifecycleState = 'ACTIVE' | 'RESOLVED' | 'MUTED';
 
 /** Risk dimensions normalized to 1–5 scale */
 export interface RiskDimensions {
-  severity: number;        // S (2 to 5)
-  impact: number;          // I (1 to 5)
-  likelihood: number;      // L (1 to 5)
-  exposure: number;        // E (1 to 5)
-  assetCriticality: number;// A (1 to 5)
-  controlGap: number;      // C (1 to 5)
+  severity: number; // S (2 to 5)
+  impact: number; // I (1 to 5)
+  likelihood: number; // L (1 to 5)
+  exposure: number; // E (1 to 5)
+  assetCriticality: number; // A (1 to 5)
+  controlGap: number; // C (1 to 5)
 }
 
 /** Risk calculation result */
 export interface RiskCalculationResult {
-  rawRisk: number;         // 0–100 before confidence
-  riskScore: number;       // 0–100 after confidence adjustment
+  rawRisk: number; // 0–100 before confidence
+  riskScore: number; // 0–100 after confidence adjustment
   priority: RiskPriorityBand;
-  confidence: number;      // 0.00 to 1.00
+  confidence: number; // 0.00 to 1.00
   riskModelVersion: string;
 }
 
@@ -211,11 +201,7 @@ export interface SecurityEventRecord {
   scanId?: string;
   findingFingerprint?: string;
   type:
-    | 'NEW_FINDING'
-    | 'RESOLVED_FINDING'
-    | 'SEVERITY_CHANGED'
-    | 'SCORE_CHANGED'
-    | 'CONTROL_CHANGED';
+    'NEW_FINDING' | 'RESOLVED_FINDING' | 'SEVERITY_CHANGED' | 'SCORE_CHANGED' | 'CONTROL_CHANGED';
   title: string;
   description: string;
   severity?: EngineSeverity;

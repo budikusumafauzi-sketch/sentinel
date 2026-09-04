@@ -23,6 +23,8 @@ export class RecommendationsService {
       if (finding.scan.userId !== userId) {
         throw new ForbiddenException('Access denied');
       }
+    } else {
+      throw new ForbiddenException('Recommendation must be associated with an owned finding');
     }
 
     return this.prisma.recommendation.create({
@@ -72,8 +74,14 @@ export class RecommendationsService {
     if (!recommendation) {
       throw new NotFoundException('Recommendation not found');
     }
-    // If linked to a finding, verify ownership
-    if (recommendation.finding && recommendation.finding.scan.userId !== userId) {
+    // Verify ownership through finding -> scan chain, or through device ownership
+    if (recommendation.finding) {
+      if (recommendation.finding.scan.userId !== userId) {
+        throw new ForbiddenException('Access denied');
+      }
+    } else if (recommendation.deviceId) {
+      await this.devicesService.findOneByUser(recommendation.deviceId, userId);
+    } else {
       throw new ForbiddenException('Access denied');
     }
     return recommendation;

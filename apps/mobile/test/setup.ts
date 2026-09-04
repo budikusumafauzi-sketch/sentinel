@@ -91,4 +91,3 @@ jest.mock('expo-modules-core', () => ({
   requireOptionalNativeModule: jest.fn(() => null),
   requireNativeModule: jest.fn(() => null),
 }));
-

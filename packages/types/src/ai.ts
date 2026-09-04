@@ -19,7 +19,7 @@ export const PROMPT_VERSIONS = {
   URL_ANALYZER: 'URL_ANALYZER_V1',
 } as const;
 
-export type PromptVersion = typeof PROMPT_VERSIONS[keyof typeof PROMPT_VERSIONS];
+export type PromptVersion = (typeof PROMPT_VERSIONS)[keyof typeof PROMPT_VERSIONS];
 
 // ──────────────────────────────────────────
 // AI Provenance & Metadata

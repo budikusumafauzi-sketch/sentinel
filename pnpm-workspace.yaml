@@ -9,3 +9,7 @@ allowBuilds:
   esbuild: true
   msgpackr-extract: true
   prisma: true
+overrides:
+  fastify: "^5.12.1"
+  postcss: ">=8.5.23"
+  decode-uri-component: ">=0.5.0"

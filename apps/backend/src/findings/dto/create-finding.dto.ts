@@ -1,4 +1,14 @@
-import { IsUUID, IsString, IsEnum, IsOptional, IsNumber, MaxLength, Min, Max, IsObject } from 'class-validator';
+import {
+  IsUUID,
+  IsString,
+  IsEnum,
+  IsOptional,
+  IsNumber,
+  MaxLength,
+  Min,
+  Max,
+  IsObject,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum FindingSeverityDto {

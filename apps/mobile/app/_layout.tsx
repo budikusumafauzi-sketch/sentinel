@@ -43,24 +43,24 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-    <View style={styles.root}>
-      <StatusBar style="dark" />
+      <View style={styles.root}>
+        <StatusBar style="dark" />
 
-      {/* Desktop Sidebar Rail when on wide/desktop viewport */}
-      {isDesktop && <SidebarNav activeTab={activeTab} onSelectTab={handleSelectTab} />}
+        {/* Desktop Sidebar Rail when on wide/desktop viewport */}
+        {isDesktop && <SidebarNav activeTab={activeTab} onSelectTab={handleSelectTab} />}
 
-      {/* Main Content Area */}
-      <View style={styles.content}>
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: colors.background },
-          }}
-        >
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        </Stack>
+        {/* Main Content Area */}
+        <View style={styles.content}>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: colors.background },
+            }}
+          >
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          </Stack>
+        </View>
       </View>
-    </View>
     </AuthProvider>
   );
 }

@@ -141,6 +141,6 @@ describe('ThreatIntelController API Endpoints', () => {
     expect(response.success).toBe(true);
     expect(response.data).toEqual(mockDescriptors);
     expect(response.data.length).toBe(1);
-    expect(response.data[0].id).toBe('cisa_kev');
+    expect(response.data[0]?.id).toBe('cisa_kev');
   });
 });

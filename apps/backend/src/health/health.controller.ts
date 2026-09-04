@@ -37,9 +37,11 @@ export class HealthController {
     }
 
     const overallStatus =
-      dbStatus === 'unhealthy' ? 'unhealthy' :
-      redisStatus === 'unavailable' ? 'degraded' :
-      'healthy';
+      dbStatus === 'unhealthy'
+        ? 'unhealthy'
+        : redisStatus === 'unavailable'
+          ? 'degraded'
+          : 'healthy';
 
     return {
       success: true,

@@ -10,7 +10,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AiController } from '../../src/ai/ai.controller';
 import { AiService } from '../../src/ai/ai.service';
 
-
 describe('AiController (API Endpoints)', () => {
   let controller: AiController;
   let aiService: any;
@@ -74,14 +73,18 @@ describe('AiController (API Endpoints)', () => {
   it('delegates analyzeThreat to service with current user id', async () => {
     const res = await controller.analyzeThreat(mockUser, { threatInput: 'Test threat' });
 
-    expect(aiService.analyzeThreat).toHaveBeenCalledWith(mockUser.id, { threatInput: 'Test threat' });
+    expect(aiService.analyzeThreat).toHaveBeenCalledWith(mockUser.id, {
+      threatInput: 'Test threat',
+    });
     expect(res.success).toBe(true);
   });
 
   it('delegates analyzeMessage to service with current user id', async () => {
     const res = await controller.analyzeMessage(mockUser, { messageText: 'Urgent notice' });
 
-    expect(aiService.analyzeMessage).toHaveBeenCalledWith(mockUser.id, { messageText: 'Urgent notice' });
+    expect(aiService.analyzeMessage).toHaveBeenCalledWith(mockUser.id, {
+      messageText: 'Urgent notice',
+    });
     expect(res.success).toBe(true);
   });
 

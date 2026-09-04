@@ -105,7 +105,10 @@ export class GeminiProvider implements AiProvider {
       }
     }
 
-    throw lastError || new GeminiProviderError('Max retries exceeded', 'PROVIDER_UNAVAILABLE', 503, false);
+    throw (
+      lastError ||
+      new GeminiProviderError('Max retries exceeded', 'PROVIDER_UNAVAILABLE', 503, false)
+    );
   }
 
   private async executeGenerateContent<T>(

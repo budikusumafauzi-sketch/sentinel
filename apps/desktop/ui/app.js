@@ -315,7 +315,7 @@ function renderScanResults(data) {
       const severityClass = (f.severity || 'medium').toLowerCase();
       const div = document.createElement('div');
       div.className = `finding-item ${severityClass}`;
-      const findingId = f.id || ('f-' + Math.random().toString(36).substring(2, 8));
+      const findingId = f.id || 'f-' + Math.random().toString(36).substring(2, 8);
       div.innerHTML = `
         <div class="finding-header">
           <span class="finding-title">${escapeHtml(f.title)}</span>
@@ -346,7 +346,8 @@ function renderScanResults(data) {
 
           aiBtn.textContent = 'Analyzing...';
           aiBox.style.display = 'block';
-          aiBox.innerHTML = '<p style="color: var(--text-muted);">Consulting Gemini AI explanation layer...</p>';
+          aiBox.innerHTML =
+            '<p style="color: var(--text-muted);">Consulting Gemini AI explanation layer...</p>';
 
           try {
             // Check if backend or local agent has finding explanation
@@ -365,9 +366,15 @@ function renderScanResults(data) {
               // Contextual fallback based on verified finding
               explanationData = {
                 summary: f.description || f.title,
-                whyItMatters: 'Unaddressed security configurations weaken defense-in-depth on this host.',
-                remediation: f.recommendationText || f.remediation || 'Follow recommended operating system configuration.',
-                limitations: ['Verified via local Windows agent. TPM/domain policy constraints may apply.'],
+                whyItMatters:
+                  'Unaddressed security configurations weaken defense-in-depth on this host.',
+                remediation:
+                  f.recommendationText ||
+                  f.remediation ||
+                  'Follow recommended operating system configuration.',
+                limitations: [
+                  'Verified via local Windows agent. TPM/domain policy constraints may apply.',
+                ],
                 promptVersion: 'SECURITY_EXPLANATION_V1',
               };
             }

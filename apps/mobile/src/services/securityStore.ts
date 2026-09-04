@@ -173,7 +173,12 @@ class SecurityStore {
     const report = this.latestReport;
 
     return order.map((key) => {
-      const upperKey = key === 'applications' ? 'APPLICATIONS' : key === 'accounts' ? 'ACCOUNTS' : (key.toUpperCase() as any);
+      const upperKey =
+        key === 'applications'
+          ? 'APPLICATIONS'
+          : key === 'accounts'
+            ? 'ACCOUNTS'
+            : (key.toUpperCase() as any);
       const catResult = report.categoryScores[upperKey];
 
       const score = catResult?.score ?? 100;
@@ -221,7 +226,8 @@ class SecurityStore {
           priority: 'low',
           priorityLabel: 'Informational',
           title: 'Run Routine Device Inspection',
-          description: 'Based on the checks available to Sentinel, keep your device updated and inspect settings regularly.',
+          description:
+            'Based on the checks available to Sentinel, keep your device updated and inspect settings regularly.',
           impact: 'Maintains security posture visibility',
           estimatedTime: '1 min',
           category: 'System',
@@ -266,7 +272,12 @@ class SecurityStore {
       title: report.status === 'COMPLETED' ? 'Security Scan Completed' : 'Partial Scan Completed',
       description: report.summary,
       type: 'scan',
-      severity: report.findingCounts.critical > 0 ? 'critical' : report.findingCounts.high > 0 ? 'high' : 'low',
+      severity:
+        report.findingCounts.critical > 0
+          ? 'critical'
+          : report.findingCounts.high > 0
+            ? 'high'
+            : 'low',
     });
 
     // Events if any

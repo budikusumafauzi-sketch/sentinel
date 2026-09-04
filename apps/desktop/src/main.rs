@@ -332,6 +332,23 @@ async fn handle_http_connection(mut socket: tokio::net::TcpStream, state: AppSta
     let method = parts[0];
     let path = parts[1];
 
+    // Security Hardening (Phase 9): Reject DNS rebinding and cross-origin browser forgery
+    if !is_request_authorized_ipc(&request_str) {
+        let err_json = serde_json::json!({
+            "error": "Forbidden: Cross-Origin or DNS Rebinding IPC request rejected"
+        });
+        let body = err_json.to_string();
+        send_http_response(
+            &mut socket,
+            "403 Forbidden",
+            "application/json",
+            "Connection: close\r\n",
+            body.as_bytes(),
+        )
+        .await;
+        return;
+    }
+
     // Local loopback CORS enforcement (strictly no wildcard *)
     let allowed_origin = "http://127.0.0.1:8765";
     let cors_headers = format!(
@@ -629,4 +646,86 @@ fn launch_desktop_window(port: u16) {
     let _ = std::process::Command::new("cmd")
         .args(["/c", "start", &url])
         .spawn();
+}
+
+/// Extracts a header value by case-insensitive name from a raw HTTP request string.
+fn get_header_value<'a>(request: &'a str, header_name: &str) -> Option<&'a str> {
+    for line in request.lines() {
+        if let Some((name, val)) = line.split_once(':') {
+            if name.trim().eq_ignore_ascii_case(header_name) {
+                return Some(val.trim());
+            }
+        }
+    }
+    None
+}
+
+/// Validates whether the incoming local IPC request is safe against DNS rebinding and cross-origin attacks.
+fn is_request_authorized_ipc(request: &str) -> bool {
+    // 1. Host header validation (must be 127.0.0.1:8765 or localhost:8765)
+    if let Some(host) = get_header_value(request, "Host") {
+        let clean_host = host.to_ascii_lowercase();
+        if clean_host != "127.0.0.1:8765"
+            && clean_host != "localhost:8765"
+            && clean_host != "127.0.0.1"
+            && clean_host != "localhost"
+        {
+            return false;
+        }
+    }
+
+    // 2. Origin header validation: if present, MUST be loopback agent or null (direct local curl)
+    if let Some(origin) = get_header_value(request, "Origin") {
+        let clean_origin = origin.to_ascii_lowercase();
+        if clean_origin != "http://127.0.0.1:8765"
+            && clean_origin != "http://localhost:8765"
+            && clean_origin != "null"
+        {
+            return false;
+        }
+    }
+
+    // 3. Referer header validation (if present, must not point to external domain)
+    if let Some(referer) = get_header_value(request, "Referer") {
+        let clean_ref = referer.to_ascii_lowercase();
+        if !clean_ref.starts_with("http://127.0.0.1:8765")
+            && !clean_ref.starts_with("http://localhost:8765")
+        {
+            return false;
+        }
+    }
+
+    true
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_ipc_authorized_local_request() {
+        let req = "GET /api/status HTTP/1.1\r\nHost: 127.0.0.1:8765\r\nOrigin: http://127.0.0.1:8765\r\n\r\n";
+        assert!(is_request_authorized_ipc(req));
+
+        let req_localhost = "POST /api/scan HTTP/1.1\r\nHost: localhost:8765\r\n\r\n";
+        assert!(is_request_authorized_ipc(req_localhost));
+    }
+
+    #[test]
+    fn test_ipc_rejects_cross_origin_browser_request() {
+        let req = "POST /api/scan HTTP/1.1\r\nHost: 127.0.0.1:8765\r\nOrigin: https://malicious-site.com\r\n\r\n";
+        assert!(!is_request_authorized_ipc(req));
+    }
+
+    #[test]
+    fn test_ipc_rejects_dns_rebinding_host() {
+        let req = "POST /api/scan HTTP/1.1\r\nHost: rebind.attacker.org:8765\r\n\r\n";
+        assert!(!is_request_authorized_ipc(req));
+    }
+
+    #[test]
+    fn test_ipc_rejects_external_referer() {
+        let req = "GET /api/status HTTP/1.1\r\nHost: 127.0.0.1:8765\r\nReferer: https://evil.com/exploit.html\r\n\r\n";
+        assert!(!is_request_authorized_ipc(req));
+    }
 }

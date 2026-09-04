@@ -16,10 +16,7 @@ export class ScoresController {
   @ApiOperation({ summary: 'Store a security score' })
   @ApiResponse({ status: 201, description: 'Score stored' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async create(
-    @CurrentUser() user: { id: string },
-    @Body() dto: CreateScoreDto,
-  ) {
+  async create(@CurrentUser() user: { id: string }, @Body() dto: CreateScoreDto) {
     const score = await this.scoresService.create(user.id, dto);
     return {
       success: true,

@@ -28,7 +28,8 @@ export class DeviceScannerService {
     syncWithBackend = true,
   ): Promise<DeviceInspectionResult> {
     const timestamp = new Date().toISOString();
-    const platform: DevicePlatform = Platform.OS === 'android' ? 'ANDROID' : Platform.OS === 'ios' ? 'IOS' : 'WINDOWS';
+    const platform: DevicePlatform =
+      Platform.OS === 'android' ? 'ANDROID' : Platform.OS === 'ios' ? 'IOS' : 'WINDOWS';
 
     // ── Stage 1: Device Discovery Baseline ──────────────────────
     onProgress?.({ stage: 'Discovering device baseline & hardware...', progress: 15 });
@@ -55,14 +56,27 @@ export class DeviceScannerService {
     }
 
     // ── Stage 3: Application & Permission Discovery ─────────────
-    onProgress?.({ stage: 'Discovering applications & permissions within platform limits...', progress: 65 });
+    onProgress?.({
+      stage: 'Discovering applications & permissions within platform limits...',
+      progress: 65,
+    });
     let rawAppDiscovery: any;
     try {
       rawAppDiscovery = isNative
         ? await SentinelDeviceIntelligence.getInstalledApplications()
-        : { status: 'unavailable', totalDiscovered: 0, applications: [], limitationReason: 'Native module unavailable in current environment' };
+        : {
+            status: 'unavailable',
+            totalDiscovered: 0,
+            applications: [],
+            limitationReason: 'Native module unavailable in current environment',
+          };
     } catch {
-      rawAppDiscovery = { status: 'unavailable', totalDiscovered: 0, applications: [], limitationReason: 'Failed to query application inventory' };
+      rawAppDiscovery = {
+        status: 'unavailable',
+        totalDiscovered: 0,
+        applications: [],
+        limitationReason: 'Failed to query application inventory',
+      };
     }
 
     // ── Stage 4: Network & Connectivity Signals ─────────────────
@@ -131,7 +145,8 @@ export class DeviceScannerService {
       checkName: 'Operating System Release',
       value: rawDeviceInfo.osVersion,
       trustState: isNative ? 'VERIFIED' : 'UNABLE_TO_VERIFY',
-      source: platform === 'ANDROID' ? 'android.os.Build.VERSION.RELEASE' : 'UIDevice.systemVersion',
+      source:
+        platform === 'ANDROID' ? 'android.os.Build.VERSION.RELEASE' : 'UIDevice.systemVersion',
       platform,
       timestamp,
       capabilityStatus: capabilities['os_version'] ?? 'SUPPORTED',
@@ -143,12 +158,18 @@ export class DeviceScannerService {
         category: 'UPDATE',
         checkName: 'Android Security Patch Level',
         value: rawDeviceInfo.securityPatch,
-        trustState: rawDeviceInfo.securityPatch ? (isNative ? 'VERIFIED' : 'UNABLE_TO_VERIFY') : 'NOT_AVAILABLE',
+        trustState: rawDeviceInfo.securityPatch
+          ? isNative
+            ? 'VERIFIED'
+            : 'UNABLE_TO_VERIFY'
+          : 'NOT_AVAILABLE',
         source: 'android.os.Build.VERSION.SECURITY_PATCH',
         platform,
         timestamp,
         capabilityStatus: capabilities['security_patch'] ?? 'SUPPORTED',
-        notes: rawDeviceInfo.securityPatch ? undefined : 'Security patch level not exposed on this platform',
+        notes: rawDeviceInfo.securityPatch
+          ? undefined
+          : 'Security patch level not exposed on this platform',
       });
     }
 
@@ -158,12 +179,23 @@ export class DeviceScannerService {
       category: 'AUTHENTICATION',
       checkName: 'Device Screen Lock Configured',
       value: rawSystemSignals.isDeviceSecure,
-      trustState: rawSystemSignals.isDeviceSecure !== null ? (isNative ? 'VERIFIED' : 'UNABLE_TO_VERIFY') : 'NOT_AVAILABLE',
-      source: platform === 'ANDROID' ? 'android.app.KeyguardManager.isDeviceSecure()' : 'LocalAuthentication',
+      trustState:
+        rawSystemSignals.isDeviceSecure !== null
+          ? isNative
+            ? 'VERIFIED'
+            : 'UNABLE_TO_VERIFY'
+          : 'NOT_AVAILABLE',
+      source:
+        platform === 'ANDROID'
+          ? 'android.app.KeyguardManager.isDeviceSecure()'
+          : 'LocalAuthentication',
       platform,
       timestamp,
       capabilityStatus: capabilities['screen_lock'] ?? 'SUPPORTED',
-      notes: rawSystemSignals.isDeviceSecure === null ? 'Screen lock configuration not exposed by platform public API' : undefined,
+      notes:
+        rawSystemSignals.isDeviceSecure === null
+          ? 'Screen lock configuration not exposed by platform public API'
+          : undefined,
     });
 
     addEvidence({
@@ -184,7 +216,10 @@ export class DeviceScannerService {
       checkName: 'Device Storage Encryption Status',
       value: rawSystemSignals.encryptionStatus,
       trustState: isNative ? 'VERIFIED' : 'UNABLE_TO_VERIFY',
-      source: platform === 'ANDROID' ? 'android.app.admin.DevicePolicyManager.getStorageEncryptionStatus()' : 'iOS Hardware Data Protection',
+      source:
+        platform === 'ANDROID'
+          ? 'android.app.admin.DevicePolicyManager.getStorageEncryptionStatus()'
+          : 'iOS Hardware Data Protection',
       platform,
       timestamp,
       capabilityStatus: capabilities['encryption_status'] ?? 'SUPPORTED',
@@ -195,7 +230,12 @@ export class DeviceScannerService {
       category: 'CONFIGURATION',
       checkName: 'Developer Options Setting',
       value: rawSystemSignals.developerOptionsEnabled,
-      trustState: rawSystemSignals.developerOptionsEnabled !== null ? (isNative ? 'VERIFIED' : 'UNABLE_TO_VERIFY') : 'NOT_AVAILABLE',
+      trustState:
+        rawSystemSignals.developerOptionsEnabled !== null
+          ? isNative
+            ? 'VERIFIED'
+            : 'UNABLE_TO_VERIFY'
+          : 'NOT_AVAILABLE',
       source: 'Settings.Global.DEVELOPMENT_SETTINGS_ENABLED',
       platform,
       timestamp,
@@ -207,7 +247,12 @@ export class DeviceScannerService {
       category: 'CONFIGURATION',
       checkName: 'USB Debugging (ADB) Setting',
       value: rawSystemSignals.adbEnabled,
-      trustState: rawSystemSignals.adbEnabled !== null ? (isNative ? 'VERIFIED' : 'UNABLE_TO_VERIFY') : 'NOT_AVAILABLE',
+      trustState:
+        rawSystemSignals.adbEnabled !== null
+          ? isNative
+            ? 'VERIFIED'
+            : 'UNABLE_TO_VERIFY'
+          : 'NOT_AVAILABLE',
       source: 'Settings.Global.ADB_ENABLED',
       platform,
       timestamp,
@@ -219,7 +264,12 @@ export class DeviceScannerService {
       category: 'CONFIGURATION',
       checkName: 'Install Unknown Applications Setting',
       value: rawSystemSignals.installNonMarketAppsAllowed,
-      trustState: rawSystemSignals.installNonMarketAppsAllowed !== null ? (isNative ? 'VERIFIED' : 'UNABLE_TO_VERIFY') : 'NOT_AVAILABLE',
+      trustState:
+        rawSystemSignals.installNonMarketAppsAllowed !== null
+          ? isNative
+            ? 'VERIFIED'
+            : 'UNABLE_TO_VERIFY'
+          : 'NOT_AVAILABLE',
       source: 'PackageManager.canRequestPackageInstalls()',
       platform,
       timestamp,
@@ -258,16 +308,18 @@ export class DeviceScannerService {
     });
 
     // Application & permission discovery evidence
-    const appEvidenceList: DiscoveredAppEvidence[] = (rawAppDiscovery.applications || []).map((app: any) => ({
-      name: app.name,
-      packageName: app.packageName,
-      versionName: app.versionName,
-      versionCode: app.versionCode,
-      isSystemApp: app.isSystemApp,
-      installSource: app.installSource,
-      requestedPermissions: app.requestedPermissions,
-      grantedPermissions: app.grantedPermissions,
-    }));
+    const appEvidenceList: DiscoveredAppEvidence[] = (rawAppDiscovery.applications || []).map(
+      (app: any) => ({
+        name: app.name,
+        packageName: app.packageName,
+        versionName: app.versionName,
+        versionCode: app.versionCode,
+        isSystemApp: app.isSystemApp,
+        installSource: app.installSource,
+        requestedPermissions: app.requestedPermissions,
+        grantedPermissions: app.grantedPermissions,
+      }),
+    );
 
     addEvidence({
       checkId: 'apps.inventory',
@@ -278,10 +330,17 @@ export class DeviceScannerService {
         status: rawAppDiscovery.status,
         limitationReason: rawAppDiscovery.limitationReason,
       },
-      trustState: rawAppDiscovery.status === 'discovered' || rawAppDiscovery.status === 'partially_discoverable'
-        ? (isNative ? 'VERIFIED' : 'UNABLE_TO_VERIFY')
-        : 'NOT_AVAILABLE',
-      source: platform === 'ANDROID' ? 'android.content.pm.PackageManager.getInstalledPackages()' : 'iOS Sandbox',
+      trustState:
+        rawAppDiscovery.status === 'discovered' ||
+        rawAppDiscovery.status === 'partially_discoverable'
+          ? isNative
+            ? 'VERIFIED'
+            : 'UNABLE_TO_VERIFY'
+          : 'NOT_AVAILABLE',
+      source:
+        platform === 'ANDROID'
+          ? 'android.content.pm.PackageManager.getInstalledPackages()'
+          : 'iOS Sandbox',
       platform,
       timestamp,
       capabilityStatus: capabilities['application_discovery'] ?? 'PARTIALLY_SUPPORTED',
@@ -301,7 +360,8 @@ export class DeviceScannerService {
       capabilityStatus: 'PERMISSION_REQUIRED',
       permission: 'android.permission.ACCESS_FINE_LOCATION',
       permissionGranted: false,
-      notes: 'Wi-Fi SSID inspection requires explicit fine location permission on Android 10+. Sentinel does not request location permission by default.',
+      notes:
+        'Wi-Fi SSID inspection requires explicit fine location permission on Android 10+. Sentinel does not request location permission by default.',
     });
 
     addEvidence({
@@ -314,7 +374,8 @@ export class DeviceScannerService {
       platform,
       timestamp,
       capabilityStatus: 'UNABLE_TO_VERIFY',
-      notes: 'Hardware attestation requires cloud verification backend (Play Integrity API / SafetyNet). Standalone offline verification is unable to verify root of trust.',
+      notes:
+        'Hardware attestation requires cloud verification backend (Play Integrity API / SafetyNet). Standalone offline verification is unable to verify root of trust.',
     });
 
     // Build system signals map
@@ -322,7 +383,13 @@ export class DeviceScannerService {
     const networkSignalsMap: Record<string, EvidenceItem> = {};
 
     for (const item of rawEvidence) {
-      if (item.category === 'SYSTEM' || item.category === 'AUTHENTICATION' || item.category === 'ENCRYPTION' || item.category === 'UPDATE' || item.category === 'CONFIGURATION') {
+      if (
+        item.category === 'SYSTEM' ||
+        item.category === 'AUTHENTICATION' ||
+        item.category === 'ENCRYPTION' ||
+        item.category === 'UPDATE' ||
+        item.category === 'CONFIGURATION'
+      ) {
         systemSignalsMap[item.checkId] = item;
       } else if (item.category === 'NETWORK') {
         networkSignalsMap[item.checkId] = item;
@@ -367,7 +434,10 @@ export class DeviceScannerService {
         scanReport = await this.syncEvidenceToBackend(inspectionResult, platform);
       } catch (err) {
         // Backend synchronization error does not discard local scan evidence
-        console.warn('Evidence synchronization to backend failed (offline or unauthenticated):', err);
+        console.warn(
+          'Evidence synchronization to backend failed (offline or unauthenticated):',
+          err,
+        );
       }
     }
 
@@ -400,7 +470,10 @@ export class DeviceScannerService {
   /**
    * Synchronizes discovered device and evidence with the Sentinel backend.
    */
-  private async syncEvidenceToBackend(result: DeviceInspectionResult, platform: DevicePlatform): Promise<CompleteScanReport | null> {
+  private async syncEvidenceToBackend(
+    result: DeviceInspectionResult,
+    platform: DevicePlatform,
+  ): Promise<CompleteScanReport | null> {
     const token = apiClient.getToken();
     if (!token) {
       // Offline / guest scan without auth — skip backend sync
@@ -412,7 +485,9 @@ export class DeviceScannerService {
     try {
       const devicesRes = await apiClient.getDevices();
       const existing = devicesRes.data?.find(
-        (d: any) => d.platform === platform && (d.model === result.deviceInfo.model || d.name.includes(result.deviceInfo.model)),
+        (d: any) =>
+          d.platform === platform &&
+          (d.model === result.deviceInfo.model || d.name.includes(result.deviceInfo.model)),
       );
       if (existing) {
         deviceId = existing.id;
@@ -423,7 +498,9 @@ export class DeviceScannerService {
 
     if (!deviceId) {
       const regRes = await apiClient.registerDevice({
-        name: `${result.deviceInfo.manufacturer} ${result.deviceInfo.model}`.trim() || 'Sentinel Android Client',
+        name:
+          `${result.deviceInfo.manufacturer} ${result.deviceInfo.model}`.trim() ||
+          'Sentinel Android Client',
         platform,
         model: result.deviceInfo.model,
         manufacturer: result.deviceInfo.manufacturer,

@@ -112,7 +112,10 @@ export function generateSecurityEvents(
         deviceId,
         scanId: currentScanId,
         type: 'SCORE_CHANGED',
-        title: delta > 0 ? `Security Score Improved (+${delta} pts)` : `Security Score Dropped (${delta} pts)`,
+        title:
+          delta > 0
+            ? `Security Score Improved (+${delta} pts)`
+            : `Security Score Dropped (${delta} pts)`,
         description: `Overall security posture moved from ${previousScore} to ${currentScore}.`,
         metadata: {
           previousScore,

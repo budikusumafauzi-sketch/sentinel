@@ -35,7 +35,11 @@ export class OutputValidator {
     };
   }
 
-  private validateConfidence(confidence: unknown, errors: string[], fieldName = 'confidence'): number {
+  private validateConfidence(
+    confidence: unknown,
+    errors: string[],
+    fieldName = 'confidence',
+  ): number {
     if (typeof confidence !== 'number' || isNaN(confidence) || confidence < 0 || confidence > 1) {
       errors.push(`${fieldName} must be a number between 0.0 and 1.0 (got ${confidence})`);
       return 0.5;
@@ -43,7 +47,12 @@ export class OutputValidator {
     return confidence;
   }
 
-  private validateString(value: unknown, fieldName: string, errors: string[], required = true): string {
+  private validateString(
+    value: unknown,
+    fieldName: string,
+    errors: string[],
+    required = true,
+  ): string {
     if (typeof value !== 'string' || (required && value.trim().length === 0)) {
       errors.push(`${fieldName} must be a non-empty string`);
       return '';
@@ -94,7 +103,11 @@ export class OutputValidator {
     const whyItMatters = this.validateString(raw.whyItMatters, 'whyItMatters', errors);
     const impact = this.validateString(raw.impact, 'impact', errors);
     const remediation = this.validateString(raw.remediation, 'remediation', errors);
-    const evidenceReferences = this.validateStringArray(raw.evidenceReferences, 'evidenceReferences', errors);
+    const evidenceReferences = this.validateStringArray(
+      raw.evidenceReferences,
+      'evidenceReferences',
+      errors,
+    );
     const limitations = this.validateStringArray(raw.limitations, 'limitations', errors);
     const confidence = this.validateConfidence(raw.confidence, errors);
 
@@ -114,7 +127,8 @@ export class OutputValidator {
       evidenceReferences,
       impact,
       remediation,
-      limitations: limitations.length > 0 ? limitations : ['No explicit limitations provided by AI model.'],
+      limitations:
+        limitations.length > 0 ? limitations : ['No explicit limitations provided by AI model.'],
       confidence,
       promptVersion,
       modelMetadata,
@@ -138,7 +152,11 @@ export class OutputValidator {
     }
 
     const overallGuidance = this.validateString(raw.overallGuidance, 'overallGuidance', errors);
-    const priorityRationale = this.validateString(raw.priorityRationale, 'priorityRationale', errors);
+    const priorityRationale = this.validateString(
+      raw.priorityRationale,
+      'priorityRationale',
+      errors,
+    );
     const limitations = this.validateStringArray(raw.limitations, 'limitations', errors);
     const confidence = this.validateConfidence(raw.confidence, errors);
 
@@ -147,11 +165,21 @@ export class OutputValidator {
     }
 
     const validatedRecommendations = (raw.recommendations || []).map((item: any, idx: number) => {
-      const rec = this.validateString(item.recommendation, `recommendations[${idx}].recommendation`, errors);
-      const rationale = this.validateString(item.rationale, `recommendations[${idx}].rationale`, errors);
+      const rec = this.validateString(
+        item.recommendation,
+        `recommendations[${idx}].recommendation`,
+        errors,
+      );
+      const rationale = this.validateString(
+        item.rationale,
+        `recommendations[${idx}].rationale`,
+        errors,
+      );
       const priority = item.priority?.toUpperCase();
       if (!['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].includes(priority)) {
-        errors.push(`recommendations[${idx}].priority must be CRITICAL, HIGH, MEDIUM, or LOW (got ${item.priority})`);
+        errors.push(
+          `recommendations[${idx}].priority must be CRITICAL, HIGH, MEDIUM, or LOW (got ${item.priority})`,
+        );
       }
 
       let affectedFindingId: string | undefined = undefined;
@@ -164,11 +192,29 @@ export class OutputValidator {
         }
       }
 
-      const affectedControl = item.affectedControl ? String(item.affectedControl).trim() : undefined;
-      const evidenceReferences = this.validateStringArray(item.evidenceReferences ?? [], `recommendations[${idx}].evidenceReferences`, errors);
-      const steps = this.validateStringArray(item.steps ?? [], `recommendations[${idx}].steps`, errors);
-      const itemLimitations = this.validateStringArray(item.limitations ?? [], `recommendations[${idx}].limitations`, errors);
-      const itemConfidence = this.validateConfidence(item.confidence ?? 0.8, errors, `recommendations[${idx}].confidence`);
+      const affectedControl = item.affectedControl
+        ? String(item.affectedControl).trim()
+        : undefined;
+      const evidenceReferences = this.validateStringArray(
+        item.evidenceReferences ?? [],
+        `recommendations[${idx}].evidenceReferences`,
+        errors,
+      );
+      const steps = this.validateStringArray(
+        item.steps ?? [],
+        `recommendations[${idx}].steps`,
+        errors,
+      );
+      const itemLimitations = this.validateStringArray(
+        item.limitations ?? [],
+        `recommendations[${idx}].limitations`,
+        errors,
+      );
+      const itemConfidence = this.validateConfidence(
+        item.confidence ?? 0.8,
+        errors,
+        `recommendations[${idx}].confidence`,
+      );
 
       return {
         recommendation: rec,
@@ -195,7 +241,10 @@ export class OutputValidator {
       recommendations: validatedRecommendations,
       overallGuidance,
       priorityRationale,
-      limitations: limitations.length > 0 ? limitations : ['Based exclusively on provided active findings context.'],
+      limitations:
+        limitations.length > 0
+          ? limitations
+          : ['Based exclusively on provided active findings context.'],
       confidence,
       promptVersion,
       modelMetadata,
@@ -219,10 +268,16 @@ export class OutputValidator {
 
     const classification = raw.classification?.toUpperCase();
     if (!['BENIGN', 'SUSPICIOUS', 'MALICIOUS', 'UNKNOWN'].includes(classification)) {
-      errors.push(`classification must be BENIGN, SUSPICIOUS, MALICIOUS, or UNKNOWN (got ${raw.classification})`);
+      errors.push(
+        `classification must be BENIGN, SUSPICIOUS, MALICIOUS, or UNKNOWN (got ${raw.classification})`,
+      );
     }
 
-    const riskInterpretation = this.validateString(raw.riskInterpretation, 'riskInterpretation', errors);
+    const riskInterpretation = this.validateString(
+      raw.riskInterpretation,
+      'riskInterpretation',
+      errors,
+    );
     const explanation = this.validateString(raw.explanation, 'explanation', errors);
     const indicators = this.validateStringArray(raw.indicators, 'indicators', errors);
     const evidence = this.validateStringArray(raw.evidence, 'evidence', errors);
@@ -265,13 +320,26 @@ export class OutputValidator {
       throw new OutputValidationError('AI response is not an object', 'SCHEMA_VALIDATION_FAILURE');
     }
 
-    const detectedElements = this.validateStringArray(raw.detectedElements, 'detectedElements', errors);
-    const suspiciousIndicators = this.validateStringArray(raw.suspiciousIndicators, 'suspiciousIndicators', errors);
+    const detectedElements = this.validateStringArray(
+      raw.detectedElements,
+      'detectedElements',
+      errors,
+    );
+    const suspiciousIndicators = this.validateStringArray(
+      raw.suspiciousIndicators,
+      'suspiciousIndicators',
+      errors,
+    );
     const explanation = this.validateString(raw.explanation, 'explanation', errors);
-    const recommendedAction = this.validateString(raw.recommendedAction, 'recommendedAction', errors);
+    const recommendedAction = this.validateString(
+      raw.recommendedAction,
+      'recommendedAction',
+      errors,
+    );
     const limitations = this.validateStringArray(raw.limitations, 'limitations', errors);
     const confidence = this.validateConfidence(raw.confidence, errors);
-    const isContentSufficient = typeof raw.isContentSufficient === 'boolean' ? raw.isContentSufficient : true;
+    const isContentSufficient =
+      typeof raw.isContentSufficient === 'boolean' ? raw.isContentSufficient : true;
 
     if (errors.length > 0) {
       throw new OutputValidationError(
@@ -286,7 +354,10 @@ export class OutputValidator {
       suspiciousIndicators,
       explanation,
       confidence,
-      limitations: limitations.length > 0 ? limitations : ['Pixel inspection only; network context unverified.'],
+      limitations:
+        limitations.length > 0
+          ? limitations
+          : ['Pixel inspection only; network context unverified.'],
       isContentSufficient,
       recommendedAction,
       promptVersion,
@@ -311,12 +382,22 @@ export class OutputValidator {
 
     const classification = raw.classification?.toUpperCase();
     if (!['SAFE', 'SUSPICIOUS', 'PHISHING', 'SPAM', 'UNKNOWN'].includes(classification)) {
-      errors.push(`classification must be SAFE, SUSPICIOUS, PHISHING, SPAM, or UNKNOWN (got ${raw.classification})`);
+      errors.push(
+        `classification must be SAFE, SUSPICIOUS, PHISHING, SPAM, or UNKNOWN (got ${raw.classification})`,
+      );
     }
 
-    const suspiciousIndicators = this.validateStringArray(raw.suspiciousIndicators, 'suspiciousIndicators', errors);
+    const suspiciousIndicators = this.validateStringArray(
+      raw.suspiciousIndicators,
+      'suspiciousIndicators',
+      errors,
+    );
     const explanation = this.validateString(raw.explanation, 'explanation', errors);
-    const recommendedAction = this.validateString(raw.recommendedAction, 'recommendedAction', errors);
+    const recommendedAction = this.validateString(
+      raw.recommendedAction,
+      'recommendedAction',
+      errors,
+    );
     const urgencyTacticsDetected = Boolean(raw.urgencyTacticsDetected);
     const credentialHarvestingRisk = Boolean(raw.credentialHarvestingRisk);
     const limitations = this.validateStringArray(raw.limitations, 'limitations', errors);
@@ -368,9 +449,17 @@ export class OutputValidator {
     }
 
     const observations = this.validateStringArray(raw.observations, 'observations', errors);
-    const riskInterpretation = this.validateString(raw.riskInterpretation, 'riskInterpretation', errors);
+    const riskInterpretation = this.validateString(
+      raw.riskInterpretation,
+      'riskInterpretation',
+      errors,
+    );
     const limitations = this.validateStringArray(raw.limitations, 'limitations', errors);
-    const sourceAttribution = this.validateString(raw.sourceAttribution ?? 'Sentinel AI URL Orchestrator', 'sourceAttribution', errors);
+    const sourceAttribution = this.validateString(
+      raw.sourceAttribution ?? 'Sentinel AI URL Orchestrator',
+      'sourceAttribution',
+      errors,
+    );
     const confidence = this.validateConfidence(raw.confidence, errors);
 
     if (errors.length > 0) {
@@ -389,7 +478,8 @@ export class OutputValidator {
       riskInterpretation,
       riskLevel: riskLevel || 'UNKNOWN',
       confidence,
-      limitations: limitations.length > 0 ? limitations : ['Phase 7 syntactic/heuristic analysis only.'],
+      limitations:
+        limitations.length > 0 ? limitations : ['Phase 7 syntactic/heuristic analysis only.'],
       sourceAttribution,
       promptVersion,
       modelMetadata,

@@ -55,7 +55,8 @@ export function buildCompleteScanReport(options: BuildScanReportOptions): Comple
     total: activeFindings.length,
   };
 
-  const totalAttempted = options.scoreBreakdown.evaluatedControlCount + options.scoreBreakdown.unavailableCheckCount;
+  const totalAttempted =
+    options.scoreBreakdown.evaluatedControlCount + options.scoreBreakdown.unavailableCheckCount;
 
   // Determine final status
   let finalStatus = options.status ?? 'COMPLETED';

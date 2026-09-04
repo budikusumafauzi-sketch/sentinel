@@ -31,6 +31,7 @@ import {
 } from './dto';
 
 import { ThreatIntelService } from '../threat-intel/threat-intel.service';
+import { ThreatIntelValidator } from '../threat-intel/validation/ssrf-validator';
 
 @Injectable()
 export class AiService {
@@ -254,27 +255,10 @@ export class AiService {
    * Syntactic & structural AI URL analysis (Phase 7 orchestration boundary).
    */
   async analyzeUrl(_userId: string, dto: UrlAnalysisDto): Promise<UrlAnalysisResult> {
-    let parsedUrl: URL;
-    try {
-      let candidate = dto.url.trim();
-      if (!candidate.startsWith('http://') && !candidate.startsWith('https://')) {
-        candidate = 'https://' + candidate;
-      }
-      parsedUrl = new URL(candidate);
-      if (
-        !parsedUrl.hostname ||
-        !parsedUrl.hostname.includes('.') ||
-        parsedUrl.hostname.length < 4
-      ) {
-        throw new Error('Invalid domain');
-      }
-    } catch {
-      throw new BadRequestException('Invalid URL format provided');
-    }
-
-    const normalizedUrl = parsedUrl.toString();
-    const domain = parsedUrl.hostname;
-    const protocol = parsedUrl.protocol;
+    const normalized = ThreatIntelValidator.normalizeUrl(dto.url);
+    const normalizedUrl = normalized.normalizedUrl;
+    const domain = normalized.hostname;
+    const protocol = normalized.protocol;
 
     let externalThreatIntel: any = undefined;
     if (this.threatIntelService) {

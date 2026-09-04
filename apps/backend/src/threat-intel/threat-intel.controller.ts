@@ -5,6 +5,7 @@ import {
   ApiResponse as SwaggerResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ThreatIntelService } from './threat-intel.service';
 import {
@@ -20,6 +21,7 @@ import type { ApiResponse, ThreatIntelResult, ThreatProviderDescriptor } from '@
 @ApiBearerAuth()
 @Controller('threat-intel')
 @UseGuards(JwtAuthGuard)
+@Throttle({ default: { limit: 30, ttl: 60000 } })
 export class ThreatIntelController {
   constructor(private readonly threatIntelService: ThreatIntelService) {}
 

@@ -17,10 +17,7 @@ export class ScansController {
   @ApiResponse({ status: 201, description: 'Scan created' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Device not found' })
-  async create(
-    @CurrentUser() user: { id: string },
-    @Body() dto: CreateScanDto,
-  ) {
+  async create(@CurrentUser() user: { id: string }, @Body() dto: CreateScanDto) {
     const scan = await this.scansService.create(user.id, dto);
     return {
       success: true,
@@ -64,10 +61,7 @@ export class ScansController {
   @ApiOperation({ summary: 'Get full structured scan report' })
   @ApiResponse({ status: 200, description: 'Complete scan report' })
   @ApiResponse({ status: 404, description: 'Scan report not found' })
-  async getReport(
-    @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() user: { id: string },
-  ) {
+  async getReport(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: { id: string }) {
     const report = await this.scansService.getReport(id, user.id);
     return {
       success: true,
@@ -80,10 +74,7 @@ export class ScansController {
   @ApiOperation({ summary: 'Get a scan by ID' })
   @ApiResponse({ status: 200, description: 'Scan details with findings' })
   @ApiResponse({ status: 404, description: 'Scan not found' })
-  async findOne(
-    @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() user: { id: string },
-  ) {
+  async findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: { id: string }) {
     const scan = await this.scansService.findOneByUser(id, user.id);
     return {
       success: true,
@@ -92,4 +83,3 @@ export class ScansController {
     };
   }
 }
-

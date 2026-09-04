@@ -108,7 +108,11 @@ export function executeSecurityEngine(options: ExecuteEngineOptions): EngineExec
 
   for (const ev of rawEvidence) {
     const trust = ev.trustState;
-    if (trust === 'NOT_AVAILABLE' || trust === 'PERMISSION_REQUIRED' || trust === 'UNABLE_TO_VERIFY') {
+    if (
+      trust === 'NOT_AVAILABLE' ||
+      trust === 'PERMISSION_REQUIRED' ||
+      trust === 'UNABLE_TO_VERIFY'
+    ) {
       unavailableCheckCount++;
       if (ev.notes) {
         errorsOrLimitations.push(`${ev.checkName}: ${ev.notes}`);
@@ -119,10 +123,15 @@ export function executeSecurityEngine(options: ExecuteEngineOptions): EngineExec
     // Verified / Analyzed / User-provided counts as an evaluated control
     if (ev.category === 'SYSTEM' || ev.category === 'UPDATE' || ev.category === 'CONFIGURATION') {
       evaluatedControlsPerCategory['SYSTEM'] = (evaluatedControlsPerCategory['SYSTEM'] || 0) + 1;
-    } else if (ev.category === 'AUTHENTICATION' || ev.category === 'ENCRYPTION' || ev.checkId.startsWith('device.')) {
+    } else if (
+      ev.category === 'AUTHENTICATION' ||
+      ev.category === 'ENCRYPTION' ||
+      ev.checkId.startsWith('device.')
+    ) {
       evaluatedControlsPerCategory['DEVICE'] = (evaluatedControlsPerCategory['DEVICE'] || 0) + 1;
     } else if (ev.category === 'APPLICATION' || ev.category === 'PERMISSIONS') {
-      evaluatedControlsPerCategory['APPLICATIONS'] = (evaluatedControlsPerCategory['APPLICATIONS'] || 0) + 1;
+      evaluatedControlsPerCategory['APPLICATIONS'] =
+        (evaluatedControlsPerCategory['APPLICATIONS'] || 0) + 1;
     } else if (ev.category === 'NETWORK') {
       evaluatedControlsPerCategory['NETWORK'] = (evaluatedControlsPerCategory['NETWORK'] || 0) + 1;
     } else if (ev.category === 'PRIVACY') {
@@ -154,7 +163,8 @@ export function executeSecurityEngine(options: ExecuteEngineOptions): EngineExec
 
     const evalResult = rule.evaluate(evalContext);
     if (evalResult) {
-      const confidence = TRUST_CONFIDENCE_MAP[evalResult.evidence[0]?.trustState ?? 'VERIFIED'] ?? 1.0;
+      const confidence =
+        TRUST_CONFIDENCE_MAP[evalResult.evidence[0]?.trustState ?? 'VERIFIED'] ?? 1.0;
       const riskCalc = calculateRiskScore(evalResult.dimensions, confidence);
       const fingerprint = computeFindingFingerprint(
         rule.ruleId,

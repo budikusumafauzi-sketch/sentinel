@@ -1,4 +1,13 @@
-import { Controller, Post, Get, Param, Query, Body, UseGuards, ParseUUIDPipe } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Param,
+  Query,
+  Body,
+  UseGuards,
+  ParseUUIDPipe,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
@@ -17,10 +26,7 @@ export class FindingsController {
   @ApiResponse({ status: 201, description: 'Finding created' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Scan not found' })
-  async create(
-    @CurrentUser() user: { id: string },
-    @Body() dto: CreateFindingDto,
-  ) {
+  async create(@CurrentUser() user: { id: string }, @Body() dto: CreateFindingDto) {
     const finding = await this.findingsService.create(user.id, dto);
     return {
       success: true,
@@ -64,10 +70,7 @@ export class FindingsController {
   @ApiOperation({ summary: 'Get a finding by ID' })
   @ApiResponse({ status: 200, description: 'Finding details' })
   @ApiResponse({ status: 404, description: 'Finding not found' })
-  async findOne(
-    @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() user: { id: string },
-  ) {
+  async findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: { id: string }) {
     const finding = await this.findingsService.findOne(id, user.id);
     return {
       success: true,

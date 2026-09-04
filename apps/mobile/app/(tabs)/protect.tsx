@@ -15,13 +15,7 @@ import { securityStore } from '../../src/services/securityStore';
 import type { SystemControlStatus } from '../../src/types/security';
 
 type CategoryTabId =
-  | 'all'
-  | 'device'
-  | 'applications'
-  | 'accounts'
-  | 'privacy'
-  | 'network'
-  | 'system';
+  'all' | 'device' | 'applications' | 'accounts' | 'privacy' | 'network' | 'system';
 
 export default function ProtectScreen() {
   const [activeCategory, setActiveCategory] = useState<CategoryTabId>('applications');
@@ -46,10 +40,14 @@ export default function ProtectScreen() {
         {
           id: 'ctrl-lock',
           name: 'Screen Lock & Keyguard',
-          status: report.findings.some((f) => f.ruleId === 'SEC-SYS-SCREEN-LOCK' && f.status === 'ACTIVE')
+          status: report.findings.some(
+            (f) => f.ruleId === 'SEC-SYS-SCREEN-LOCK' && f.status === 'ACTIVE',
+          )
             ? 'risk'
             : 'secure',
-          statusLabel: report.findings.some((f) => f.ruleId === 'SEC-SYS-SCREEN-LOCK' && f.status === 'ACTIVE')
+          statusLabel: report.findings.some(
+            (f) => f.ruleId === 'SEC-SYS-SCREEN-LOCK' && f.status === 'ACTIVE',
+          )
             ? 'Disabled'
             : 'Configured',
           lastChecked: 'Verified',
@@ -57,10 +55,14 @@ export default function ProtectScreen() {
         {
           id: 'ctrl-enc',
           name: 'Device Storage Encryption',
-          status: report.findings.some((f) => f.ruleId === 'SEC-SYS-STORAGE-ENCRYPTION' && f.status === 'ACTIVE')
+          status: report.findings.some(
+            (f) => f.ruleId === 'SEC-SYS-STORAGE-ENCRYPTION' && f.status === 'ACTIVE',
+          )
             ? 'critical'
             : 'secure',
-          statusLabel: report.findings.some((f) => f.ruleId === 'SEC-SYS-STORAGE-ENCRYPTION' && f.status === 'ACTIVE')
+          statusLabel: report.findings.some(
+            (f) => f.ruleId === 'SEC-SYS-STORAGE-ENCRYPTION' && f.status === 'ACTIVE',
+          )
             ? 'Inactive'
             : 'Encrypted',
           lastChecked: 'Verified',
@@ -68,10 +70,14 @@ export default function ProtectScreen() {
         {
           id: 'ctrl-patch',
           name: 'OS Security Patch Level',
-          status: report.findings.some((f) => f.ruleId === 'SEC-SYS-SECURITY-PATCH' && f.status === 'ACTIVE')
+          status: report.findings.some(
+            (f) => f.ruleId === 'SEC-SYS-SECURITY-PATCH' && f.status === 'ACTIVE',
+          )
             ? 'attention'
             : 'secure',
-          statusLabel: report.findings.some((f) => f.ruleId === 'SEC-SYS-SECURITY-PATCH' && f.status === 'ACTIVE')
+          statusLabel: report.findings.some(
+            (f) => f.ruleId === 'SEC-SYS-SECURITY-PATCH' && f.status === 'ACTIVE',
+          )
             ? 'Outdated'
             : report.deviceInfo?.securityPatch || 'Current',
           lastChecked: report.deviceInfo?.securityPatch || 'Checked',
@@ -79,20 +85,48 @@ export default function ProtectScreen() {
         {
           id: 'ctrl-adb',
           name: 'USB Debugging (ADB)',
-          status: report.findings.some((f) => f.ruleId === 'SEC-SYS-DEV-DEBUGGING' && f.status === 'ACTIVE')
+          status: report.findings.some(
+            (f) => f.ruleId === 'SEC-SYS-DEV-DEBUGGING' && f.status === 'ACTIVE',
+          )
             ? 'attention'
             : 'secure',
-          statusLabel: report.findings.some((f) => f.ruleId === 'SEC-SYS-DEV-DEBUGGING' && f.status === 'ACTIVE')
+          statusLabel: report.findings.some(
+            (f) => f.ruleId === 'SEC-SYS-DEV-DEBUGGING' && f.status === 'ACTIVE',
+          )
             ? 'Enabled'
             : 'Disabled',
           lastChecked: 'Verified',
         },
       ]
     : [
-        { id: 'ctrl-lock', name: 'Screen Lock & Keyguard', status: 'neutral', statusLabel: 'Pending Scan', lastChecked: 'Not checked' },
-        { id: 'ctrl-enc', name: 'Device Storage Encryption', status: 'neutral', statusLabel: 'Pending Scan', lastChecked: 'Not checked' },
-        { id: 'ctrl-patch', name: 'OS Security Patch Level', status: 'neutral', statusLabel: 'Pending Scan', lastChecked: 'Not checked' },
-        { id: 'ctrl-adb', name: 'USB Debugging (ADB)', status: 'neutral', statusLabel: 'Pending Scan', lastChecked: 'Not checked' },
+        {
+          id: 'ctrl-lock',
+          name: 'Screen Lock & Keyguard',
+          status: 'neutral',
+          statusLabel: 'Pending Scan',
+          lastChecked: 'Not checked',
+        },
+        {
+          id: 'ctrl-enc',
+          name: 'Device Storage Encryption',
+          status: 'neutral',
+          statusLabel: 'Pending Scan',
+          lastChecked: 'Not checked',
+        },
+        {
+          id: 'ctrl-patch',
+          name: 'OS Security Patch Level',
+          status: 'neutral',
+          statusLabel: 'Pending Scan',
+          lastChecked: 'Not checked',
+        },
+        {
+          id: 'ctrl-adb',
+          name: 'USB Debugging (ADB)',
+          status: 'neutral',
+          statusLabel: 'Pending Scan',
+          lastChecked: 'Not checked',
+        },
       ];
 
   return (
@@ -169,7 +203,8 @@ export default function ProtectScreen() {
             <Icon name="check" size={24} color={colors.secureDark} />
             <Text style={styles.allClearTitle}>No Active Findings in this Category</Text>
             <Text style={styles.allClearSub}>
-              Based on the checks available to Sentinel, all evaluated controls passed without detected anomalies.
+              Based on the checks available to Sentinel, all evaluated controls passed without
+              detected anomalies.
             </Text>
           </Card>
         )}

@@ -252,9 +252,14 @@ export class ThreatIntelValidator {
   /**
    * Asserts that a hostname/IP does not target internal infrastructure (SSRF barrier).
    */
-  private static assertSafeHostname(hostname: string): void {
+  public static assertSafeHostname(hostname: string): void {
+    const cleanHost = hostname
+      .replace(/^\[|\]$/g, '')
+      .toLowerCase()
+      .trim();
+
     // 1. Reserved literal hostnames
-    if (RESERVED_HOSTNAMES.has(hostname)) {
+    if (RESERVED_HOSTNAMES.has(cleanHost) || RESERVED_HOSTNAMES.has(hostname)) {
       throw new BadRequestException(
         `SSRF Protection: Queries targeting internal host "${hostname}" are forbidden`,
       );
@@ -262,20 +267,22 @@ export class ThreatIntelValidator {
 
     // 2. Reserved TLD suffixes
     for (const suffix of RESERVED_TLD_SUFFIXES) {
-      if (hostname.endsWith(suffix)) {
+      if (cleanHost.endsWith(suffix)) {
         throw new BadRequestException(
           `SSRF Protection: Queries targeting private TLD "${suffix}" are forbidden`,
         );
       }
     }
 
-    // 3. IPv6 loopback / unique local
+    // 3. IPv6 loopback / unspecified / unique local / link-local / IPv4-mapped IPv6
     if (
-      hostname === '::1' ||
-      hostname === '[::1]' ||
-      hostname.startsWith('fc') ||
-      hostname.startsWith('fd') ||
-      hostname.startsWith('fe80')
+      cleanHost === '::1' ||
+      cleanHost === '::' ||
+      cleanHost.startsWith('fc') ||
+      cleanHost.startsWith('fd') ||
+      cleanHost.startsWith('fe80') ||
+      cleanHost.startsWith('::ffff:') ||
+      cleanHost.startsWith('0:0:0:0:0:ffff:')
     ) {
       throw new BadRequestException(
         `SSRF Protection: Queries targeting private IPv6 address "${hostname}" are forbidden`,
@@ -283,15 +290,15 @@ export class ThreatIntelValidator {
     }
 
     // 4. IPv4 private / loopback / link-local
-    if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname)) {
+    if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(cleanHost)) {
       for (const pattern of PRIVATE_IPV4_PATTERNS) {
-        if (pattern.test(hostname)) {
+        if (pattern.test(cleanHost)) {
           throw new BadRequestException(
             `SSRF Protection: Queries targeting non-public IP "${hostname}" are forbidden`,
           );
         }
       }
-    } else if (!hostname.includes('.')) {
+    } else if (!cleanHost.includes('.')) {
       throw new BadRequestException(
         `Malformed hostname: "${hostname}" must contain at least one dot separating labels`,
       );

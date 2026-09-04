@@ -16,10 +16,7 @@ export class DevicesController {
   @ApiOperation({ summary: 'Register a new device' })
   @ApiResponse({ status: 201, description: 'Device registered' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async create(
-    @CurrentUser() user: { id: string },
-    @Body() dto: CreateDeviceDto,
-  ) {
+  async create(@CurrentUser() user: { id: string }, @Body() dto: CreateDeviceDto) {
     const device = await this.devicesService.create(user.id, dto);
     return {
       success: true,
@@ -44,10 +41,7 @@ export class DevicesController {
   @ApiOperation({ summary: 'Get security history for a device' })
   @ApiResponse({ status: 200, description: 'List of security history records' })
   @ApiResponse({ status: 404, description: 'Device not found' })
-  async getHistory(
-    @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() user: { id: string },
-  ) {
+  async getHistory(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: { id: string }) {
     const history = await this.devicesService.getHistory(id, user.id);
     return {
       success: true,
@@ -60,10 +54,7 @@ export class DevicesController {
   @ApiOperation({ summary: 'Get security events for a device' })
   @ApiResponse({ status: 200, description: 'List of security events' })
   @ApiResponse({ status: 404, description: 'Device not found' })
-  async getEvents(
-    @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() user: { id: string },
-  ) {
+  async getEvents(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: { id: string }) {
     const events = await this.devicesService.getEvents(id, user.id);
     return {
       success: true,
@@ -76,10 +67,7 @@ export class DevicesController {
   @ApiOperation({ summary: 'Get a device by ID' })
   @ApiResponse({ status: 200, description: 'Device details' })
   @ApiResponse({ status: 404, description: 'Device not found' })
-  async findOne(
-    @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() user: { id: string },
-  ) {
+  async findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: { id: string }) {
     const device = await this.devicesService.findOneByUser(id, user.id);
     return {
       success: true,

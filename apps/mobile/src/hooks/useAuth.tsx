@@ -26,7 +26,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
+    setState((prev) => ({ ...prev, isLoading: true, error: null }));
     try {
       const response = await apiClient.login(email, password);
       apiClient.setToken(response.data.accessToken);
@@ -38,34 +38,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       return true;
     } catch (err) {
-      const message = err instanceof ApiError
-        ? err.message
-        : 'Login failed. Please try again.';
-      setState(prev => ({ ...prev, isLoading: false, error: message }));
+      const message = err instanceof ApiError ? err.message : 'Login failed. Please try again.';
+      setState((prev) => ({ ...prev, isLoading: false, error: message }));
       return false;
     }
   }, []);
 
-  const register = useCallback(async (email: string, password: string, name?: string): Promise<boolean> => {
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
-    try {
-      const response = await apiClient.register(email, password, name);
-      apiClient.setToken(response.data.accessToken);
-      setState({
-        isAuthenticated: true,
-        isLoading: false,
-        user: response.data.user,
-        error: null,
-      });
-      return true;
-    } catch (err) {
-      const message = err instanceof ApiError
-        ? err.message
-        : 'Registration failed. Please try again.';
-      setState(prev => ({ ...prev, isLoading: false, error: message }));
-      return false;
-    }
-  }, []);
+  const register = useCallback(
+    async (email: string, password: string, name?: string): Promise<boolean> => {
+      setState((prev) => ({ ...prev, isLoading: true, error: null }));
+      try {
+        const response = await apiClient.register(email, password, name);
+        apiClient.setToken(response.data.accessToken);
+        setState({
+          isAuthenticated: true,
+          isLoading: false,
+          user: response.data.user,
+          error: null,
+        });
+        return true;
+      } catch (err) {
+        const message =
+          err instanceof ApiError ? err.message : 'Registration failed. Please try again.';
+        setState((prev) => ({ ...prev, isLoading: false, error: message }));
+        return false;
+      }
+    },
+    [],
+  );
 
   const logout = useCallback(() => {
     apiClient.setToken(null);
@@ -78,22 +78,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const clearError = useCallback(() => {
-    setState(prev => ({ ...prev, error: null }));
+    setState((prev) => ({ ...prev, error: null }));
   }, []);
 
-  const value = useMemo<AuthContextValue>(() => ({
-    ...state,
-    login,
-    register,
-    logout,
-    clearError,
-  }), [state, login, register, logout, clearError]);
-
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo<AuthContextValue>(
+    () => ({
+      ...state,
+      login,
+      register,
+      logout,
+      clearError,
+    }),
+    [state, login, register, logout, clearError],
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth(): AuthContextValue {

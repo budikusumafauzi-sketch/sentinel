@@ -41,10 +41,14 @@ export default function OverviewScreen() {
         {
           id: 'ctrl-lock',
           name: 'Screen Lock & Keyguard',
-          status: report.findings.some((f) => f.ruleId === 'SEC-SYS-SCREEN-LOCK' && f.status === 'ACTIVE')
+          status: report.findings.some(
+            (f) => f.ruleId === 'SEC-SYS-SCREEN-LOCK' && f.status === 'ACTIVE',
+          )
             ? 'risk'
             : 'secure',
-          statusLabel: report.findings.some((f) => f.ruleId === 'SEC-SYS-SCREEN-LOCK' && f.status === 'ACTIVE')
+          statusLabel: report.findings.some(
+            (f) => f.ruleId === 'SEC-SYS-SCREEN-LOCK' && f.status === 'ACTIVE',
+          )
             ? 'Disabled'
             : 'Configured',
           lastChecked: 'Verified',
@@ -52,10 +56,14 @@ export default function OverviewScreen() {
         {
           id: 'ctrl-enc',
           name: 'Device Storage Encryption',
-          status: report.findings.some((f) => f.ruleId === 'SEC-SYS-STORAGE-ENCRYPTION' && f.status === 'ACTIVE')
+          status: report.findings.some(
+            (f) => f.ruleId === 'SEC-SYS-STORAGE-ENCRYPTION' && f.status === 'ACTIVE',
+          )
             ? 'critical'
             : 'secure',
-          statusLabel: report.findings.some((f) => f.ruleId === 'SEC-SYS-STORAGE-ENCRYPTION' && f.status === 'ACTIVE')
+          statusLabel: report.findings.some(
+            (f) => f.ruleId === 'SEC-SYS-STORAGE-ENCRYPTION' && f.status === 'ACTIVE',
+          )
             ? 'Inactive'
             : 'Encrypted',
           lastChecked: 'Verified',
@@ -63,10 +71,14 @@ export default function OverviewScreen() {
         {
           id: 'ctrl-patch',
           name: 'OS Security Patch Level',
-          status: report.findings.some((f) => f.ruleId === 'SEC-SYS-SECURITY-PATCH' && f.status === 'ACTIVE')
+          status: report.findings.some(
+            (f) => f.ruleId === 'SEC-SYS-SECURITY-PATCH' && f.status === 'ACTIVE',
+          )
             ? 'attention'
             : 'secure',
-          statusLabel: report.findings.some((f) => f.ruleId === 'SEC-SYS-SECURITY-PATCH' && f.status === 'ACTIVE')
+          statusLabel: report.findings.some(
+            (f) => f.ruleId === 'SEC-SYS-SECURITY-PATCH' && f.status === 'ACTIVE',
+          )
             ? 'Outdated'
             : report.deviceInfo?.securityPatch || 'Current',
           lastChecked: report.deviceInfo?.securityPatch || 'Checked',
@@ -74,20 +86,48 @@ export default function OverviewScreen() {
         {
           id: 'ctrl-adb',
           name: 'USB Debugging (ADB)',
-          status: report.findings.some((f) => f.ruleId === 'SEC-SYS-DEV-DEBUGGING' && f.status === 'ACTIVE')
+          status: report.findings.some(
+            (f) => f.ruleId === 'SEC-SYS-DEV-DEBUGGING' && f.status === 'ACTIVE',
+          )
             ? 'attention'
             : 'secure',
-          statusLabel: report.findings.some((f) => f.ruleId === 'SEC-SYS-DEV-DEBUGGING' && f.status === 'ACTIVE')
+          statusLabel: report.findings.some(
+            (f) => f.ruleId === 'SEC-SYS-DEV-DEBUGGING' && f.status === 'ACTIVE',
+          )
             ? 'Enabled'
             : 'Disabled',
           lastChecked: 'Verified',
         },
       ]
     : [
-        { id: 'ctrl-lock', name: 'Screen Lock & Keyguard', status: 'neutral', statusLabel: 'Pending Scan', lastChecked: 'Not checked' },
-        { id: 'ctrl-enc', name: 'Device Storage Encryption', status: 'neutral', statusLabel: 'Pending Scan', lastChecked: 'Not checked' },
-        { id: 'ctrl-patch', name: 'OS Security Patch Level', status: 'neutral', statusLabel: 'Pending Scan', lastChecked: 'Not checked' },
-        { id: 'ctrl-adb', name: 'USB Debugging (ADB)', status: 'neutral', statusLabel: 'Pending Scan', lastChecked: 'Not checked' },
+        {
+          id: 'ctrl-lock',
+          name: 'Screen Lock & Keyguard',
+          status: 'neutral',
+          statusLabel: 'Pending Scan',
+          lastChecked: 'Not checked',
+        },
+        {
+          id: 'ctrl-enc',
+          name: 'Device Storage Encryption',
+          status: 'neutral',
+          statusLabel: 'Pending Scan',
+          lastChecked: 'Not checked',
+        },
+        {
+          id: 'ctrl-patch',
+          name: 'OS Security Patch Level',
+          status: 'neutral',
+          statusLabel: 'Pending Scan',
+          lastChecked: 'Not checked',
+        },
+        {
+          id: 'ctrl-adb',
+          name: 'USB Debugging (ADB)',
+          status: 'neutral',
+          statusLabel: 'Pending Scan',
+          lastChecked: 'Not checked',
+        },
       ];
 
   if (showFullReport) {
@@ -98,7 +138,8 @@ export default function OverviewScreen() {
           <Card variant="elevated" padding="lg" style={styles.emptyReportCard}>
             <Text style={styles.emptyTitle}>No Scan Report Available</Text>
             <Text style={styles.emptySubtitle}>
-              Based on the checks available to Sentinel, an inspection must be completed before a security report can be generated.
+              Based on the checks available to Sentinel, an inspection must be completed before a
+              security report can be generated.
             </Text>
             <PrimaryButton
               title="Run Device Scan Now"
@@ -198,11 +239,7 @@ export default function OverviewScreen() {
           <SectionHeader title="Recent Activity" actionText="Timeline" onAction={() => {}} />
           <Card variant="outlined" padding="md" style={styles.activityCard}>
             {activity.map((item, idx) => (
-              <ActivityItem
-                key={item.id}
-                activity={item}
-                isLast={idx === activity.length - 1}
-              />
+              <ActivityItem key={item.id} activity={item} isLast={idx === activity.length - 1} />
             ))}
           </Card>
 

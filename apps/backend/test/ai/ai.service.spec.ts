@@ -132,15 +132,15 @@ describe('AiService (Central AI Intelligence Layer)', () => {
     });
 
     it('rejects request with NotFoundException when finding does not exist', async () => {
-      await expect(
-        aiService.explainFinding(mockUser.id, 'non-existent-id'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(aiService.explainFinding(mockUser.id, 'non-existent-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('rejects request with ForbiddenException when finding belongs to another user', async () => {
-      await expect(
-        aiService.explainFinding(otherUser.id, mockFinding.id),
-      ).rejects.toThrow(ForbiddenException);
+      await expect(aiService.explainFinding(otherUser.id, mockFinding.id)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 
@@ -155,9 +155,9 @@ describe('AiService (Central AI Intelligence Layer)', () => {
     });
 
     it('rejects request with ForbiddenException when device belongs to another user', async () => {
-      await expect(
-        aiService.getSecurityAdvisor(otherUser.id, mockDevice.id),
-      ).rejects.toThrow(ForbiddenException);
+      await expect(aiService.getSecurityAdvisor(otherUser.id, mockDevice.id)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 
@@ -194,7 +194,8 @@ describe('AiService (Central AI Intelligence Layer)', () => {
 
     it('analyzes valid screenshot base64 image in memory', async () => {
       const result = await aiService.analyzeScreenshot(mockUser.id, {
-        imageBase64: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+        imageBase64:
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
         mimeType: 'image/png',
         contextNote: 'Suspicious pop-up window',
       });

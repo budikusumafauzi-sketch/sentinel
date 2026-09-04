@@ -6,7 +6,9 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  ParseUUIDPipe,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { AiService } from './ai.service';
@@ -21,6 +23,7 @@ import { ApiResponse } from '@sentinel/types';
 
 @Controller('ai')
 @UseGuards(JwtAuthGuard)
+@Throttle({ default: { limit: 15, ttl: 60000 } })
 export class AiController {
   constructor(private readonly aiService: AiService) {}
 
@@ -28,7 +31,7 @@ export class AiController {
   @HttpCode(HttpStatus.OK)
   async explainFinding(
     @CurrentUser() user: { id: string },
-    @Param('id') findingId: string,
+    @Param('id', ParseUUIDPipe) findingId: string,
   ): Promise<ApiResponse<any>> {
     const data = await this.aiService.explainFinding(user.id, findingId);
     return {

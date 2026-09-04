@@ -48,7 +48,10 @@ export default function IntelligenceScreen() {
             inputSummary: inputText.slice(0, 100) + (inputText.length > 100 ? '...' : ''),
             riskLevel: mappedRisk,
             confidence: Math.round(d.confidence * 100),
-            threatType: d.classification === 'PHISHING' ? 'SMS / Chat Phishing' : `${d.classification} Pattern`,
+            threatType:
+              d.classification === 'PHISHING'
+                ? 'SMS / Chat Phishing'
+                : `${d.classification} Pattern`,
             summary: d.explanation,
             indicators: d.suspiciousIndicators,
             recommendations: [d.recommendedAction],
@@ -70,7 +73,8 @@ export default function IntelligenceScreen() {
             id: 'url-' + Date.now(),
             type: 'url',
             inputSummary: d.normalizedUrl,
-            riskLevel: mappedRisk === 'critical' ? 'critical' : mappedRisk === 'high' ? 'high' : 'medium',
+            riskLevel:
+              mappedRisk === 'critical' ? 'critical' : mappedRisk === 'high' ? 'high' : 'medium',
             confidence: Math.round(d.confidence * 100),
             threatType: 'Suspicious Domain / URL',
             summary: d.riskInterpretation,
@@ -122,7 +126,9 @@ export default function IntelligenceScreen() {
       });
     } catch (err: any) {
       // Gracefully handle AI failure without crashing
-      const msg = err?.message || 'AI service temporarily unavailable. Deterministic scanning remains fully active.';
+      const msg =
+        err?.message ||
+        'AI service temporarily unavailable. Deterministic scanning remains fully active.';
       setErrorMessage(msg);
       // Retain mock fallback so user experience is not broken
       setAnalysisResult({

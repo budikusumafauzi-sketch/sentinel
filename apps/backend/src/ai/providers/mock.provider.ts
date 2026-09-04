@@ -38,12 +38,7 @@ export class MockAiProvider implements AiProvider {
 
   async generateStructured<T>(request: AiProviderRequest): Promise<AiProviderResponse<T>> {
     if (!this.isConfigured()) {
-      throw new GeminiProviderError(
-        'AI Provider is not configured',
-        'CONFIG_MISSING',
-        401,
-        false,
-      );
+      throw new GeminiProviderError('AI Provider is not configured', 'CONFIG_MISSING', 401, false);
     }
 
     if (this.customHandler) {
@@ -65,7 +60,8 @@ export class MockAiProvider implements AiProvider {
       defaultContent = {
         summary: 'Mock finding explanation summary based on verified evidence.',
         explanation: 'The system has detected an unencrypted volume or inactive firewall rule.',
-        whyItMatters: 'Unencrypted storage exposes personal user data to unauthorized physical access.',
+        whyItMatters:
+          'Unencrypted storage exposes personal user data to unauthorized physical access.',
         evidenceReferences: ['BitLocker status', 'Encryption cipher AES-256'],
         impact: 'Potential data confidentiality loss in case of physical device theft.',
         remediation: 'Enable device encryption in Windows Settings or BitLocker Control Panel.',
@@ -88,7 +84,8 @@ export class MockAiProvider implements AiProvider {
           },
         ],
         overallGuidance: 'Prioritize disk encryption and update antivirus definitions.',
-        priorityRationale: 'Encryption directly protects stored personal credentials and identity files.',
+        priorityRationale:
+          'Encryption directly protects stored personal credentials and identity files.',
         limitations: ['Based only on currently synchronized findings.'],
         confidence: 0.9,
       };
@@ -108,20 +105,29 @@ export class MockAiProvider implements AiProvider {
         suspiciousIndicators: ['Mismatched domain URL in title bar', 'Urgent warning banner'],
         explanation: 'The screenshot displays characteristics of a credential-harvesting prompt.',
         confidence: 0.89,
-        limitations: ['Visual AI inspection only; certificate details not verifiable from pixel data.'],
+        limitations: [
+          'Visual AI inspection only; certificate details not verifiable from pixel data.',
+        ],
         isContentSufficient: true,
         recommendedAction: 'Do not enter credentials. Close the window immediately.',
       };
     } else if (prompt.includes('MESSAGE_ANALYZER_V1')) {
       defaultContent = {
         classification: 'PHISHING',
-        suspiciousIndicators: ['Artificial urgency', 'Threat of account termination', 'Suspicious link'],
-        explanation: 'Typical phishing message seeking credential or OTP submission under false pretenses.',
+        suspiciousIndicators: [
+          'Artificial urgency',
+          'Threat of account termination',
+          'Suspicious link',
+        ],
+        explanation:
+          'Typical phishing message seeking credential or OTP submission under false pretenses.',
         urgencyTacticsDetected: true,
         credentialHarvestingRisk: true,
         recommendedAction: 'Delete the message and block the sender. Do not click links.',
         confidence: 0.94,
-        limitations: ['Text analysis only; sender identity could not be verified via carrier headers.'],
+        limitations: [
+          'Text analysis only; sender identity could not be verified via carrier headers.',
+        ],
       };
     } else if (prompt.includes('URL_ANALYZER_V1')) {
       defaultContent = {
@@ -132,7 +138,9 @@ export class MockAiProvider implements AiProvider {
         riskInterpretation: 'Suspicious domain structure mimicking authentication portals.',
         riskLevel: 'HIGH',
         confidence: 0.87,
-        limitations: ['Phase 7 syntactic/heuristic interpretation; Phase 8 threat feeds not queried.'],
+        limitations: [
+          'Phase 7 syntactic/heuristic interpretation; Phase 8 threat feeds not queried.',
+        ],
         sourceAttribution: 'Sentinel AI Pattern Analyzer',
       };
     } else {

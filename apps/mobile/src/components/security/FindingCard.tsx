@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, type ViewStyle } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+  type ViewStyle,
+} from 'react-native';
 import { colors } from '../../design-system/colors';
 import { radius } from '../../design-system/radius';
 import { spacing } from '../../design-system/spacing';
@@ -62,7 +69,8 @@ export const FindingCard: React.FC<FindingCardProps> = ({ finding, onTakeAction,
     } catch (err: any) {
       // Gracefully handle AI unavailable without crashing
       setAiError(
-        err?.message || 'AI explanation is temporarily unavailable. The verified finding remains active.',
+        err?.message ||
+          'AI explanation is temporarily unavailable. The verified finding remains active.',
       );
       // Fallback local explanation
       setAiExplanation({
@@ -159,13 +167,16 @@ export const FindingCard: React.FC<FindingCardProps> = ({ finding, onTakeAction,
             <View style={styles.aiLimitationsBox}>
               <Text style={styles.aiLimitationsTitle}>Known Limitations:</Text>
               {aiExplanation.limitations.map((lim, idx) => (
-                <Text key={idx} style={styles.aiLimitationItem}>• {lim}</Text>
+                <Text key={idx} style={styles.aiLimitationItem}>
+                  • {lim}
+                </Text>
               ))}
             </View>
           )}
 
           <Text style={styles.aiDisclaimer}>
-            * The deterministic Phase 5 engine score and severity are authoritative. AI provides plain-language interpretation only.
+            * The deterministic Phase 5 engine score and severity are authoritative. AI provides
+            plain-language interpretation only.
           </Text>
         </View>
       )}
