@@ -510,6 +510,182 @@ export const ruleSideloadedApps: SecurityRule = {
   },
 };
 
+/**
+ * 8. Windows Firewall Disabled
+ */
+export const ruleWindowsFirewall: SecurityRule = {
+  ruleId: 'SEC-WIN-FIREWALL',
+  rulesetVersion: RULESET_VERSION,
+  category: 'NETWORK',
+  title: 'Windows Firewall Disabled',
+  description: 'One or more active Windows Firewall profiles (Domain, Private, or Public) are turned off.',
+  defaultSeverity: 'HIGH',
+  requiredCheckIds: ['security.firewall_active'],
+  platformApplicability: ['WINDOWS'],
+  evaluate(context: RuleEvaluationContext): RuleEvaluationResult | null {
+    const ev = context.evidenceMap.get('security.firewall_active');
+    if (!ev || !isEvidenceEligibleForFinding(ev.trustState)) {
+      return null;
+    }
+
+    if (ev.value === false || ev.value === 'disabled') {
+      const dimensions: RiskDimensions = {
+        severity: 4, // HIGH
+        impact: 4,
+        likelihood: 4,
+        exposure: 4,
+        assetCriticality: 4,
+        controlGap: 4,
+      };
+
+      return {
+        ruleId: 'SEC-WIN-FIREWALL',
+        rulesetVersion: RULESET_VERSION,
+        category: 'NETWORK',
+        title: 'Windows Firewall Inactive',
+        description: 'Host-based firewall protection is disabled across one or more network profiles.',
+        severity: 'HIGH',
+        dimensions,
+        assetKey: 'firewall',
+        evidence: [
+          {
+            checkId: ev.checkId,
+            checkName: ev.checkName,
+            value: ev.value,
+            source: ev.source,
+            trustState: ev.trustState,
+          },
+        ],
+        explanation: 'Disabling the Windows Firewall leaves network ports exposed to unauthorized inbound connections and lateral movement on local networks.',
+        recommendation: {
+          title: 'Enable Windows Defender Firewall',
+          description: 'Open Windows Security → Firewall & network protection and turn on firewall profiles for Domain, Private, and Public networks.',
+          actionUrl: 'ms-settings:windowsdefender',
+        },
+      };
+    }
+
+    return null;
+  },
+};
+
+/**
+ * 9. Windows Real-Time Antivirus Protection Disabled
+ */
+export const ruleWindowsAntivirus: SecurityRule = {
+  ruleId: 'SEC-WIN-ANTIVIRUS',
+  rulesetVersion: RULESET_VERSION,
+  category: 'SYSTEM',
+  title: 'Real-Time Antivirus Protection Disabled',
+  description: 'Microsoft Defender Antivirus real-time monitoring is inactive or turned off.',
+  defaultSeverity: 'HIGH',
+  requiredCheckIds: ['security.realtime_protection'],
+  platformApplicability: ['WINDOWS'],
+  evaluate(context: RuleEvaluationContext): RuleEvaluationResult | null {
+    const ev = context.evidenceMap.get('security.realtime_protection');
+    if (!ev || !isEvidenceEligibleForFinding(ev.trustState)) {
+      return null;
+    }
+
+    if (ev.value === false || ev.value === 'disabled') {
+      const dimensions: RiskDimensions = {
+        severity: 4, // HIGH
+        impact: 5,
+        likelihood: 4,
+        exposure: 4,
+        assetCriticality: 4,
+        controlGap: 5,
+      };
+
+      return {
+        ruleId: 'SEC-WIN-ANTIVIRUS',
+        rulesetVersion: RULESET_VERSION,
+        category: 'SYSTEM',
+        title: 'Real-Time Protection Disabled',
+        description: 'Active antivirus protection is disabled, leaving the system exposed to malicious software.',
+        severity: 'HIGH',
+        dimensions,
+        assetKey: 'antivirus',
+        evidence: [
+          {
+            checkId: ev.checkId,
+            checkName: ev.checkName,
+            value: ev.value,
+            source: ev.source,
+            trustState: ev.trustState,
+          },
+        ],
+        explanation: 'Without real-time file scanning and behavioral monitoring, malware downloads and executed scripts run without automated detection.',
+        recommendation: {
+          title: 'Enable Real-Time Protection',
+          description: 'Open Windows Security → Virus & threat protection → Manage settings and turn on Real-time protection.',
+          actionUrl: 'ms-settings:windowsdefender',
+        },
+      };
+    }
+
+    return null;
+  },
+};
+
+/**
+ * 10. Windows User Account Control (UAC) Disabled
+ */
+export const ruleWindowsUAC: SecurityRule = {
+  ruleId: 'SEC-WIN-UAC',
+  rulesetVersion: RULESET_VERSION,
+  category: 'SYSTEM',
+  title: 'User Account Control (UAC) Disabled',
+  description: 'User Account Control is turned off, allowing administrative applications to elevate without user prompt.',
+  defaultSeverity: 'MEDIUM',
+  requiredCheckIds: ['security.uac_enabled'],
+  platformApplicability: ['WINDOWS'],
+  evaluate(context: RuleEvaluationContext): RuleEvaluationResult | null {
+    const ev = context.evidenceMap.get('security.uac_enabled');
+    if (!ev || !isEvidenceEligibleForFinding(ev.trustState)) {
+      return null;
+    }
+
+    if (ev.value === false || ev.value === 0) {
+      const dimensions: RiskDimensions = {
+        severity: 3, // MEDIUM
+        impact: 4,
+        likelihood: 3,
+        exposure: 3,
+        assetCriticality: 4,
+        controlGap: 4,
+      };
+
+      return {
+        ruleId: 'SEC-WIN-UAC',
+        rulesetVersion: RULESET_VERSION,
+        category: 'SYSTEM',
+        title: 'User Account Control (UAC) Inactive',
+        description: 'UAC elevation prompts are disabled on this system.',
+        severity: 'MEDIUM',
+        dimensions,
+        assetKey: 'uac',
+        evidence: [
+          {
+            checkId: ev.checkId,
+            checkName: ev.checkName,
+            value: ev.value,
+            source: ev.source,
+            trustState: ev.trustState,
+          },
+        ],
+        explanation: 'Disabling UAC allows background processes to silently gain administrative privileges without displaying a security confirmation prompt.',
+        recommendation: {
+          title: 'Turn On User Account Control',
+          description: 'Search for "Change User Account Control settings" in the Start menu and set the slider to the recommended notification level.',
+        },
+      };
+    }
+
+    return null;
+  },
+};
+
 /** Complete initial rule catalog */
 export const SECURITY_RULES: SecurityRule[] = [
   ruleScreenLock,
@@ -519,4 +695,8 @@ export const SECURITY_RULES: SecurityRule[] = [
   ruleUnknownSources,
   ruleSensitiveAppPermissions,
   ruleSideloadedApps,
+  ruleWindowsFirewall,
+  ruleWindowsAntivirus,
+  ruleWindowsUAC,
 ];
+

@@ -1,0 +1,11 @@
+{
+  "name": "@sentinel/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sentinel Windows Desktop Security Agent",
+  "scripts": {
+    "build": "cargo build --release",
+    "dev": "cargo run",
+    "test": "cargo test"
+  }
+}

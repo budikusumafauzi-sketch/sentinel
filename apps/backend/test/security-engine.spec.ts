@@ -696,4 +696,200 @@ describe('Sentinel Phase 5: Deterministic Security Engine', () => {
       expect(run1.recommendations).toEqual(run2.recommendations);
     });
   });
+
+  // ──────────────────────────────────────────
+  // H. Phase 6: Windows Desktop Agent Evidence
+  // ──────────────────────────────────────────
+  describe('H. Phase 6: Windows Desktop Agent Evidence', () => {
+    const windowsDeviceInfo = {
+      manufacturer: 'ASUS',
+      model: 'ZenBook UX425',
+      osVersion: 'Windows 11 Pro (Build 26100)',
+      platform: 'WINDOWS' as const,
+      isEmulator: false,
+    };
+
+    it('produces healthy score with zero findings when Windows controls are verified secure', () => {
+      const windowsEvidence: EvidenceItem[] = [
+        {
+          checkId: 'security.firewall_active',
+          category: 'NETWORK',
+          checkName: 'Windows Firewall',
+          value: true,
+          trustState: 'VERIFIED',
+          source: 'netsh.advfirewall',
+          platform: 'WINDOWS',
+          timestamp: '2026-09-03T12:00:00Z',
+          capabilityStatus: 'SUPPORTED',
+        },
+        {
+          checkId: 'security.realtime_protection',
+          category: 'SYSTEM',
+          checkName: 'Microsoft Defender Real-Time Protection',
+          value: true,
+          trustState: 'VERIFIED',
+          source: 'Get-MpComputerStatus',
+          platform: 'WINDOWS',
+          timestamp: '2026-09-03T12:00:00Z',
+          capabilityStatus: 'SUPPORTED',
+        },
+        {
+          checkId: 'security.uac_enabled',
+          category: 'SYSTEM',
+          checkName: 'User Account Control',
+          value: true,
+          trustState: 'VERIFIED',
+          source: 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System',
+          platform: 'WINDOWS',
+          timestamp: '2026-09-03T12:00:00Z',
+          capabilityStatus: 'SUPPORTED',
+        },
+        {
+          checkId: 'security.storage_encryption',
+          category: 'ENCRYPTION',
+          checkName: 'BitLocker Drive Encryption',
+          value: true,
+          trustState: 'VERIFIED',
+          source: 'manage-bde.status',
+          platform: 'WINDOWS',
+          timestamp: '2026-09-03T12:00:00Z',
+          capabilityStatus: 'SUPPORTED',
+        },
+        {
+          checkId: 'security.screen_lock',
+          category: 'AUTHENTICATION',
+          checkName: 'Screen Lock Configured',
+          value: true,
+          trustState: 'VERIFIED',
+          source: 'Windows.Security.Credentials',
+          platform: 'WINDOWS',
+          timestamp: '2026-09-03T12:00:00Z',
+          capabilityStatus: 'SUPPORTED',
+        },
+      ];
+
+      const result = executeSecurityEngine({
+        scanId: 'scan-win-secure',
+        deviceId: 'win-device-01',
+        deviceInfo: windowsDeviceInfo,
+        rawEvidence: windowsEvidence,
+        evaluationDate: evalDate,
+      });
+
+      expect(result.findings).toHaveLength(0);
+      expect(result.report.status).toBe('COMPLETED');
+      expect(result.report.overallScore).toBe(100);
+      expect(result.scoreBreakdown.evaluatedControlCount).toBe(5);
+      expect(result.scoreBreakdown.unavailableCheckCount).toBe(0);
+    });
+
+    it('generates deterministic findings when Windows controls are verified disabled', () => {
+      const insecureWindowsEvidence: EvidenceItem[] = [
+        {
+          checkId: 'security.firewall_active',
+          category: 'NETWORK',
+          checkName: 'Windows Firewall',
+          value: false,
+          trustState: 'VERIFIED',
+          source: 'netsh.advfirewall',
+          platform: 'WINDOWS',
+          timestamp: '2026-09-03T12:00:00Z',
+          capabilityStatus: 'SUPPORTED',
+        },
+        {
+          checkId: 'security.realtime_protection',
+          category: 'SYSTEM',
+          checkName: 'Microsoft Defender Real-Time Protection',
+          value: false,
+          trustState: 'VERIFIED',
+          source: 'Get-MpComputerStatus',
+          platform: 'WINDOWS',
+          timestamp: '2026-09-03T12:00:00Z',
+          capabilityStatus: 'SUPPORTED',
+        },
+        {
+          checkId: 'security.uac_enabled',
+          category: 'SYSTEM',
+          checkName: 'User Account Control',
+          value: false,
+          trustState: 'VERIFIED',
+          source: 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System',
+          platform: 'WINDOWS',
+          timestamp: '2026-09-03T12:00:00Z',
+          capabilityStatus: 'SUPPORTED',
+        },
+      ];
+
+      const result = executeSecurityEngine({
+        scanId: 'scan-win-insecure',
+        deviceId: 'win-device-02',
+        deviceInfo: windowsDeviceInfo,
+        rawEvidence: insecureWindowsEvidence,
+        evaluationDate: evalDate,
+      });
+
+      expect(result.findings.length).toBeGreaterThanOrEqual(3);
+      const ruleIds = result.findings.map((f) => f.ruleId);
+      expect(ruleIds).toContain('SEC-WIN-FIREWALL');
+      expect(ruleIds).toContain('SEC-WIN-ANTIVIRUS');
+      expect(ruleIds).toContain('SEC-WIN-UAC');
+      expect(result.report.overallScore).toBeLessThan(100);
+    });
+
+    it('honestly treats NOT_AVAILABLE or PERMISSION_REQUIRED checks without penalizing user', () => {
+      const partialEvidence: EvidenceItem[] = [
+        {
+          checkId: 'security.firewall_active',
+          category: 'NETWORK',
+          checkName: 'Windows Firewall',
+          value: true,
+          trustState: 'VERIFIED',
+          source: 'netsh.advfirewall',
+          platform: 'WINDOWS',
+          timestamp: '2026-09-03T12:00:00Z',
+          capabilityStatus: 'SUPPORTED',
+        },
+        {
+          checkId: 'security.storage_encryption',
+          category: 'ENCRYPTION',
+          checkName: 'BitLocker Encryption',
+          value: null,
+          trustState: 'PERMISSION_REQUIRED',
+          source: 'manage-bde.status',
+          platform: 'WINDOWS',
+          timestamp: '2026-09-03T12:00:00Z',
+          capabilityStatus: 'PERMISSION_REQUIRED',
+          notes: 'Elevation required to read volume master key status',
+        },
+        {
+          checkId: 'security.tpm_present',
+          category: 'SYSTEM',
+          checkName: 'TPM Security Hardware',
+          value: null,
+          trustState: 'NOT_AVAILABLE',
+          source: 'Get-Tpm',
+          platform: 'WINDOWS',
+          timestamp: '2026-09-03T12:00:00Z',
+          capabilityStatus: 'NOT_AVAILABLE',
+          notes: 'TPM hardware module not detected on platform',
+        },
+      ];
+
+      const result = executeSecurityEngine({
+        scanId: 'scan-win-partial',
+        deviceId: 'win-device-03',
+        deviceInfo: windowsDeviceInfo,
+        rawEvidence: partialEvidence,
+        evaluationDate: evalDate,
+      });
+
+      // No findings for missing TPM or BitLocker permission
+      expect(result.findings).toHaveLength(0);
+      expect(result.report.status).toBe('PARTIAL');
+      expect(result.scoreBreakdown.unavailableCheckCount).toBe(2);
+      expect(result.report.errorsOrLimitations.length).toBe(2);
+      expect(result.report.overallScore).toBe(100); // 1 verified control was clean
+    });
+  });
 });
+
