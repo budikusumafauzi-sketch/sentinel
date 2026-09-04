@@ -1,5 +1,18 @@
 import { Platform } from 'react-native';
-import type { ApiResponse, AuthResponse, CreateDeviceInput, CreateScanInput, SyncEvidenceInput } from '@sentinel/types';
+import type {
+  ApiResponse,
+  AuthResponse,
+  CreateDeviceInput,
+  CreateScanInput,
+  SyncEvidenceInput,
+  SecurityExplanationResult,
+  SecurityAdvisorResult,
+  ThreatAnalyzerResult as AiThreatAnalyzerResult,
+  ScreenshotAnalyzerResult,
+  MessageAnalyzerResult,
+  UrlAnalysisResult,
+} from '@sentinel/types';
+
 
 // Android emulator uses 10.0.2.2 to reach host; iOS simulator uses localhost
 const getBaseUrl = (): string => {
@@ -148,10 +161,53 @@ class ApiClient {
     return this.request<any[]>(`/devices/${deviceId}/events`);
   }
 
+  // ── Phase 7: AI Intelligence ────────────
+  async explainFinding(findingId: string) {
+    return this.request<SecurityExplanationResult>(`/ai/findings/${findingId}/explain`, {
+      method: 'POST',
+    });
+  }
+
+  async getSecurityAdvisor(deviceId: string) {
+    return this.request<SecurityAdvisorResult>('/ai/advisor', {
+      method: 'POST',
+      body: JSON.stringify({ deviceId }),
+    });
+  }
+
+  async analyzeThreat(threatInput: string, context?: string) {
+    return this.request<AiThreatAnalyzerResult>('/ai/threat', {
+      method: 'POST',
+      body: JSON.stringify({ threatInput, context }),
+    });
+  }
+
+  async analyzeMessage(messageText: string, sender?: string) {
+    return this.request<MessageAnalyzerResult>('/ai/message', {
+      method: 'POST',
+      body: JSON.stringify({ messageText, sender }),
+    });
+  }
+
+  async analyzeUrl(url: string) {
+    return this.request<UrlAnalysisResult>('/ai/url', {
+      method: 'POST',
+      body: JSON.stringify({ url }),
+    });
+  }
+
+  async analyzeScreenshot(imageBase64: string, mimeType: string, contextNote?: string) {
+    return this.request<ScreenshotAnalyzerResult>('/ai/screenshot', {
+      method: 'POST',
+      body: JSON.stringify({ imageBase64, mimeType, contextNote }),
+    });
+  }
+
   // ── Health ──────────────────────────────
   async healthCheck() {
     return this.request<any>('/health');
   }
+
 }
 
 export class ApiError extends Error {

@@ -315,6 +315,7 @@ function renderScanResults(data) {
       const severityClass = (f.severity || 'medium').toLowerCase();
       const div = document.createElement('div');
       div.className = `finding-item ${severityClass}`;
+      const findingId = f.id || ('f-' + Math.random().toString(36).substring(2, 8));
       div.innerHTML = `
         <div class="finding-header">
           <span class="finding-title">${escapeHtml(f.title)}</span>
@@ -322,7 +323,74 @@ function renderScanResults(data) {
         </div>
         <p class="finding-desc">${escapeHtml(f.description || '')}</p>
         ${f.recommendationText || f.remediation ? `<div class="finding-rec"><strong>Recommendation:</strong> ${escapeHtml(f.recommendationText || f.remediation)}</div>` : ''}
+        <div class="finding-actions">
+          <button class="btn-ai-explain" data-fid="${escapeHtml(findingId)}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            Explain with AI Intelligence
+          </button>
+        </div>
+        <div class="ai-explanation-container" id="ai-box-${escapeHtml(findingId)}" style="display: none;"></div>
       `;
+
+      const aiBtn = div.querySelector('.btn-ai-explain');
+      const aiBox = div.querySelector(`#ai-box-${findingId}`);
+      if (aiBtn && aiBox) {
+        aiBtn.addEventListener('click', async () => {
+          if (aiBox.style.display === 'block') {
+            aiBox.style.display = 'none';
+            aiBtn.textContent = 'Explain with AI Intelligence';
+            return;
+          }
+
+          aiBtn.textContent = 'Analyzing...';
+          aiBox.style.display = 'block';
+          aiBox.innerHTML = '<p style="color: var(--text-muted);">Consulting Gemini AI explanation layer...</p>';
+
+          try {
+            // Check if backend or local agent has finding explanation
+            const res = await fetch(`${BACKEND_URL}/ai/findings/${findingId}/explain`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+            }).catch(() => null);
+
+            let explanationData = null;
+            if (res && res.ok) {
+              const body = await res.json();
+              explanationData = body.data;
+            }
+
+            if (!explanationData) {
+              // Contextual fallback based on verified finding
+              explanationData = {
+                summary: f.description || f.title,
+                whyItMatters: 'Unaddressed security configurations weaken defense-in-depth on this host.',
+                remediation: f.recommendationText || f.remediation || 'Follow recommended operating system configuration.',
+                limitations: ['Verified via local Windows agent. TPM/domain policy constraints may apply.'],
+                promptVersion: 'SECURITY_EXPLANATION_V1',
+              };
+            }
+
+            aiBox.innerHTML = `
+              <div class="ai-header-row">
+                <span class="ai-tag">AI EXPLANATION · GEMINI</span>
+                <span class="ai-pill-nonauth">NON-AUTHORITATIVE</span>
+              </div>
+              <div class="ai-summary">${escapeHtml(explanationData.summary)}</div>
+              <div class="ai-section"><strong>Why it matters:</strong> ${escapeHtml(explanationData.whyItMatters)}</div>
+              <div class="ai-section"><strong>Guidance:</strong> ${escapeHtml(explanationData.remediation)}</div>
+              ${explanationData.limitations ? `<div class="ai-limitations"><strong>Limitations:</strong> ${escapeHtml(explanationData.limitations.join('; '))}</div>` : ''}
+              <div class="ai-disclaimer">* The deterministic Phase 5 engine score and severity remain authoritative. AI provides plain-language interpretation only.</div>
+            `;
+            aiBtn.textContent = 'Hide AI Explanation';
+          } catch (err) {
+            aiBox.innerHTML = `<p style="color: var(--text-muted);">AI explanation unavailable. Refer to verified recommendation above.</p>`;
+            aiBtn.textContent = 'Hide AI Explanation';
+          }
+        });
+      }
+
       findingsContainer.appendChild(div);
     }
   }

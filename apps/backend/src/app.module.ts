@@ -12,6 +12,7 @@ import { ScoresModule } from './scores/scores.module';
 import { RecommendationsModule } from './recommendations/recommendations.module';
 import { RedisModule } from './redis/redis.module';
 import { QueueModule } from './queue/queue.module';
+import { AiModule } from './ai/ai.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { QueueModule } from './queue/queue.module';
     FindingsModule,
     ScoresModule,
     RecommendationsModule,
+    AiModule,
   ],
   providers: [
     {

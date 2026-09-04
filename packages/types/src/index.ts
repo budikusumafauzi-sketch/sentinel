@@ -210,3 +210,9 @@ export interface DesktopAgentContract {
 // ──────────────────────────────────────────
 export * from './security-engine';
 
+// ──────────────────────────────────────────
+// Phase 7: AI Intelligence
+// ──────────────────────────────────────────
+export * from './ai';
+
+
