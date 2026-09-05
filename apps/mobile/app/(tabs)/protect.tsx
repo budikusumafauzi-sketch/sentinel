@@ -58,7 +58,7 @@ export default function ProtectScreen() {
           status: report.findings.some(
             (f) => f.ruleId === 'SEC-SYS-STORAGE-ENCRYPTION' && f.status === 'ACTIVE',
           )
-            ? 'critical'
+            ? 'risk'
             : 'secure',
           statusLabel: report.findings.some(
             (f) => f.ruleId === 'SEC-SYS-STORAGE-ENCRYPTION' && f.status === 'ACTIVE',
@@ -102,32 +102,59 @@ export default function ProtectScreen() {
         {
           id: 'ctrl-lock',
           name: 'Screen Lock & Keyguard',
-          status: 'neutral',
+          status: 'pending',
           statusLabel: 'Pending Scan',
           lastChecked: 'Not checked',
         },
         {
           id: 'ctrl-enc',
           name: 'Device Storage Encryption',
-          status: 'neutral',
+          status: 'pending',
           statusLabel: 'Pending Scan',
           lastChecked: 'Not checked',
         },
         {
           id: 'ctrl-patch',
           name: 'OS Security Patch Level',
-          status: 'neutral',
+          status: 'pending',
           statusLabel: 'Pending Scan',
           lastChecked: 'Not checked',
         },
         {
           id: 'ctrl-adb',
           name: 'USB Debugging (ADB)',
-          status: 'neutral',
+          status: 'pending',
           statusLabel: 'Pending Scan',
           lastChecked: 'Not checked',
         },
       ];
+
+  const currentCategoryData =
+    activeCategory === 'all'
+      ? {
+          id: 'all',
+          name: 'All Security Categories',
+          score: report?.overallScore ?? 100,
+          passedChecks: Math.max(
+            0,
+            (report?.checksCompleted ?? 0) -
+              (report?.findings?.filter((f) => f.status === 'ACTIVE')?.length ?? 0),
+          ),
+          totalChecks: report?.checksCompleted ?? 0,
+        }
+      : categories.find((c) => c.id.toLowerCase() === activeCategory.toLowerCase());
+
+  const categoryPassedCount = currentCategoryData
+    ? 'passedChecks' in currentCategoryData
+      ? currentCategoryData.passedChecks
+      : (currentCategoryData as any).checksCount - (currentCategoryData as any).issuesCount
+    : 0;
+
+  const categoryTotalCount = currentCategoryData
+    ? 'totalChecks' in currentCategoryData
+      ? currentCategoryData.totalChecks
+      : (currentCategoryData as any).checksCount
+    : 0;
 
   return (
     <ScreenContainer>
@@ -136,38 +163,64 @@ export default function ProtectScreen() {
         subtitle="Manage controls and inspection boundaries"
       />
 
-      {/* Horizontal Category Switcher */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.categoryScroll}
-      >
-        <TouchableOpacity
-          style={[styles.catPill, activeCategory === 'all' && styles.catPillActive]}
-          onPress={() => setActiveCategory('all')}
-          activeOpacity={0.7}
+      {/* Horizontal Category Switcher — Constrained to avoid vertical stretching */}
+      <View style={styles.categoryBarContainer}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.categoryScrollView}
+          contentContainerStyle={styles.categoryScroll}
         >
-          <Text style={[styles.catPillText, activeCategory === 'all' && styles.catPillTextActive]}>
-            All Categories
-          </Text>
-        </TouchableOpacity>
-
-        {categories.map((cat) => {
-          const isActive = activeCategory === cat.id;
-          return (
-            <TouchableOpacity
-              key={cat.id}
-              style={[styles.catPill, isActive && styles.catPillActive]}
-              onPress={() => setActiveCategory(cat.id as CategoryTabId)}
-              activeOpacity={0.7}
+          <TouchableOpacity
+            style={[styles.catPill, activeCategory === 'all' && styles.catPillActive]}
+            onPress={() => setActiveCategory('all')}
+            accessibilityRole="button"
+            accessibilityLabel="Filter all security categories"
+          >
+            <Text
+              style={[styles.catPillText, activeCategory === 'all' && styles.catPillTextActive]}
             >
-              <Text style={[styles.catPillText, isActive && styles.catPillTextActive]}>
-                {cat.name} ({cat.score})
+              All
+            </Text>
+          </TouchableOpacity>
+
+          {categories.map((cat) => {
+            const isActive = activeCategory.toLowerCase() === cat.id.toLowerCase();
+            return (
+              <TouchableOpacity
+                key={cat.id}
+                style={[styles.catPill, isActive && styles.catPillActive]}
+                onPress={() => setActiveCategory(cat.id as CategoryTabId)}
+                accessibilityRole="button"
+                accessibilityLabel={`Filter by ${cat.name} category`}
+              >
+                <Text style={[styles.catPillText, isActive && styles.catPillTextActive]}>
+                  {cat.name}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
+
+      {/* Category Overview Card */}
+      {currentCategoryData && (
+        <Card variant="outlined" padding="md" style={styles.categorySummaryCard}>
+          <View style={styles.catSummaryHeader}>
+            <View style={styles.catSummaryLeft}>
+              <Text style={styles.catSummaryTitle}>{currentCategoryData.name}</Text>
+              <Text style={styles.catSummarySub}>
+                {categoryPassedCount} of {categoryTotalCount} checks verified ·{' '}
+                {categoryFindings.length} active finding(s)
               </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+            </View>
+            <View style={styles.catScoreBadge}>
+              <Text style={styles.catScoreNumber}>{currentCategoryData.score}</Text>
+              <Text style={styles.catScoreScale}>/ 100</Text>
+            </View>
+          </View>
+        </Card>
+      )}
 
       {/* System Category Specific View */}
       {activeCategory === 'system' && (
@@ -214,18 +267,29 @@ export default function ProtectScreen() {
 }
 
 const styles = StyleSheet.create({
-  categoryScroll: {
-    paddingVertical: spacing.xs,
-    gap: spacing.xs,
+  categoryBarContainer: {
     marginBottom: spacing.md,
   },
+  categoryScrollView: {
+    flexGrow: 0,
+    height: 44,
+  },
+  categoryScroll: {
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingVertical: 2,
+    paddingHorizontal: 2,
+  },
   catPill: {
-    paddingVertical: spacing.sm,
+    alignSelf: 'center',
+    height: 36,
     paddingHorizontal: spacing.md,
     borderRadius: radius.full,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   catPillActive: {
     backgroundColor: colors.primary,
@@ -238,6 +302,47 @@ const styles = StyleSheet.create({
   },
   catPillTextActive: {
     color: colors.textInverse,
+  },
+  categorySummaryCard: {
+    marginBottom: spacing.md,
+    backgroundColor: colors.surface,
+  },
+  catSummaryHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  catSummaryLeft: {
+    flex: 1,
+  },
+  catSummaryTitle: {
+    fontSize: fontSizes.base,
+    fontWeight: fontWeights.bold,
+    color: colors.textPrimary,
+  },
+  catSummarySub: {
+    fontSize: fontSizes.xs,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  catScoreBadge: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    backgroundColor: colors.surfaceMuted,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.md,
+    marginLeft: spacing.sm,
+  },
+  catScoreNumber: {
+    fontSize: fontSizes.lg,
+    fontWeight: fontWeights.bold,
+    color: colors.primary,
+  },
+  catScoreScale: {
+    fontSize: fontSizes.xs,
+    color: colors.textMuted,
+    marginLeft: 2,
   },
   sectionWrapper: {
     marginBottom: spacing.lg,
@@ -268,7 +373,8 @@ const styles = StyleSheet.create({
   },
   allClearCard: {
     alignItems: 'center',
-    paddingVertical: spacing.xl,
+    paddingVertical: spacing.lg,
+    backgroundColor: colors.surface,
   },
   allClearTitle: {
     fontSize: fontSizes.md,
@@ -282,7 +388,7 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.xs,
     color: colors.textMuted,
     textAlign: 'center',
-    maxWidth: 300,
+    maxWidth: 320,
     lineHeight: 18,
   },
 });

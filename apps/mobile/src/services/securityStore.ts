@@ -179,7 +179,7 @@ class SecurityStore {
           : key === 'accounts'
             ? 'ACCOUNTS'
             : (key.toUpperCase() as any);
-      const catResult = report.categoryScores[upperKey];
+      const catResult = (report.categoryScores as Record<string, any>)?.[upperKey];
 
       const score = catResult?.score ?? 100;
       const checksCount = catResult?.evaluatedControls ?? 0;
@@ -189,13 +189,13 @@ class SecurityStore {
       let statusLabel = 'Secure';
 
       if (checksCount === 0) {
-        status = 'neutral';
+        status = 'pending';
         statusLabel = 'Not Evaluated';
       } else if (issuesCount > 0) {
-        if (catResult?.findings.some((f) => f.severity === 'CRITICAL')) {
-          status = 'critical';
+        if (catResult?.findings?.some((f: any) => f.severity === 'CRITICAL')) {
+          status = 'risk';
           statusLabel = 'Critical Risk';
-        } else if (catResult?.findings.some((f) => f.severity === 'HIGH')) {
+        } else if (catResult?.findings?.some((f: any) => f.severity === 'HIGH')) {
           status = 'risk';
           statusLabel = 'High Risk';
         } else {

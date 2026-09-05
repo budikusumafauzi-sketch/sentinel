@@ -9,7 +9,11 @@ import { ScreenHeader } from '../../src/components/layout/ScreenHeader';
 import { Card } from '../../src/components/common/Card';
 import { SectionHeader } from '../../src/components/common/SectionHeader';
 import { Icon } from '../../src/components/common/Icon';
-import { AnalyzerInput, type AnalyzerTab } from '../../src/components/analyzer/AnalyzerInput';
+import {
+  AnalyzerInput,
+  type AnalyzerTab,
+  type ScreenshotData,
+} from '../../src/components/analyzer/AnalyzerInput';
 import { AnalyzerResultCard } from '../../src/components/analyzer/AnalyzerResultCard';
 import { mockThreatAnalysis } from '../../src/mock/securityData';
 import type { ThreatAnalyzerResult } from '../../src/types/security';
@@ -20,6 +24,7 @@ export default function IntelligenceScreen() {
   const [inputText, setInputText] = useState(
     'Selamat! Akun Anda akan diblokir. Klik link ini untuk verifikasi akun Anda: http://secure-login-update.com',
   );
+  const [screenshotData, setScreenshotData] = useState<ScreenshotData | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<ThreatAnalyzerResult | null>(
     mockThreatAnalysis,
@@ -36,9 +41,9 @@ export default function IntelligenceScreen() {
         if (res?.data) {
           const d = res.data;
           const mappedRisk =
-            d.classification === 'PHISHING' || d.classification === 'MALICIOUS'
+            d.classification === 'PHISHING'
               ? 'high'
-              : d.classification === 'SUSPICIOUS'
+              : d.classification === 'SUSPICIOUS' || d.classification === 'SPAM'
                 ? 'medium'
                 : 'low';
 
@@ -90,27 +95,50 @@ export default function IntelligenceScreen() {
           return;
         }
       } else if (activeTab === 'screenshot') {
-        // Fallback for sample screenshot text or base64
+        if (!screenshotData || !screenshotData.base64) {
+          setErrorMessage('Please select or upload a screenshot to analyze.');
+          setIsAnalyzing(false);
+          return;
+        }
+
         const res = await apiClient.analyzeScreenshot(
-          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
-          'image/png',
-          inputText,
+          screenshotData.base64,
+          screenshotData.mimeType,
+          screenshotData.contextNote,
         );
         if (res?.data) {
           const d = res.data;
+          const hasIndicators = d.suspiciousIndicators && d.suspiciousIndicators.length > 0;
+          const mappedRisk =
+            d.suspiciousIndicators.length >= 2
+              ? 'critical'
+              : d.suspiciousIndicators.length === 1
+                ? 'high'
+                : 'low';
+
           setAnalysisResult({
             id: 'ss-' + Date.now(),
             type: 'screenshot',
-            inputSummary: inputText.slice(0, 80),
-            riskLevel: 'high',
+            inputSummary: screenshotData.fileName || 'Screenshot Image Analysis',
+            riskLevel: mappedRisk,
             confidence: Math.round(d.confidence * 100),
-            threatType: 'Visual Phishing Prompt',
+            threatType: hasIndicators
+              ? 'Visual Impersonation / Phishing Prompt'
+              : 'Verified Legitimate Visual Prompt',
             summary: d.explanation,
-            indicators: d.suspiciousIndicators,
+            indicators: hasIndicators
+              ? d.suspiciousIndicators
+              : ['No visual indicators of deception or credential harvesting detected.'],
             recommendations: [d.recommendedAction],
             evidenceList: [
-              { label: 'Detected Elements', value: d.detectedElements.join(', ') },
-              { label: 'Content Sufficient', value: d.isContentSufficient ? 'Yes' : 'No' },
+              { label: 'Detected Elements', value: d.detectedElements.join(', ') || 'None' },
+              {
+                label: 'Content Sufficiency',
+                value: d.isContentSufficient
+                  ? 'Sufficient for verification'
+                  : 'Insufficient resolution',
+              },
+              { label: 'AI Model', value: d.modelMetadata?.model || 'Gemini Multimodal' },
               { label: 'Prompt Version', value: d.promptVersion },
             ],
           });
@@ -122,7 +150,10 @@ export default function IntelligenceScreen() {
       setAnalysisResult({
         ...mockThreatAnalysis,
         type: activeTab,
-        inputSummary: inputText.slice(0, 100) + '...',
+        inputSummary:
+          activeTab === 'screenshot'
+            ? screenshotData?.fileName || 'Screenshot Image'
+            : inputText.slice(0, 100) + '...',
       });
     } catch (err: any) {
       // Gracefully handle AI failure without crashing
@@ -134,7 +165,10 @@ export default function IntelligenceScreen() {
       setAnalysisResult({
         ...mockThreatAnalysis,
         type: activeTab,
-        inputSummary: inputText.slice(0, 100) + '...',
+        inputSummary:
+          activeTab === 'screenshot'
+            ? screenshotData?.fileName || 'Screenshot Image'
+            : inputText.slice(0, 100) + '...',
       });
     } finally {
       setIsAnalyzing(false);
@@ -144,6 +178,7 @@ export default function IntelligenceScreen() {
   const handleReset = () => {
     setAnalysisResult(null);
     setInputText('');
+    setScreenshotData(null);
     setErrorMessage(null);
   };
 
@@ -171,9 +206,7 @@ export default function IntelligenceScreen() {
           setErrorMessage(null);
           if (tab === 'url') {
             setInputText('http://secure-login-update.com/verify-account');
-          } else if (tab === 'screenshot') {
-            setInputText('screenshot_login_prompt_suspicious.png');
-          } else {
+          } else if (tab === 'message') {
             setInputText(
               'Selamat! Akun Anda akan diblokir. Klik link ini untuk verifikasi akun Anda: http://secure-login-update.com',
             );
@@ -181,6 +214,8 @@ export default function IntelligenceScreen() {
         }}
         inputText={inputText}
         onInputChange={setInputText}
+        screenshotData={screenshotData}
+        onScreenshotChange={setScreenshotData}
         onAnalyze={handleAnalyze}
         isAnalyzing={isAnalyzing}
       />

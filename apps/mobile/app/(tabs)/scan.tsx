@@ -12,6 +12,7 @@ import { PrimaryButton, SecondaryButton } from '../../src/components/common/Butt
 import { ScanTypeSelector, type ScanType } from '../../src/components/scan/ScanTypeSelector';
 import { ScanProgressView } from '../../src/components/scan/ScanProgressView';
 import { FullReportView } from '../../src/components/security/FullReportView';
+import { EvidenceProvenanceCard } from '../../src/components/security/EvidenceProvenanceCard';
 import { deviceScanner, type ScanStageProgress } from '../../src/services/deviceScanner';
 import { securityStore } from '../../src/services/securityStore';
 import type { DeviceInspectionResult } from '@sentinel/types';
@@ -159,31 +160,7 @@ export default function ScanScreen() {
         />
         <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
           {inspectionResult.rawEvidence.map((item, idx) => (
-            <Card key={idx} variant="outlined" padding="md" style={styles.evidenceCard}>
-              <View style={styles.evidenceHeader}>
-                <Text style={styles.evidenceName}>{item.checkName}</Text>
-                <View
-                  style={[
-                    styles.trustBadge,
-                    item.trustState === 'VERIFIED'
-                      ? styles.trustVerified
-                      : item.trustState === 'PERMISSION_REQUIRED'
-                        ? styles.trustPermReq
-                        : styles.trustUnavailable,
-                  ]}
-                >
-                  <Text style={styles.trustBadgeText}>{item.trustState}</Text>
-                </View>
-              </View>
-              <Text style={styles.evidenceSource}>API Source: {item.source}</Text>
-              <Text style={styles.evidenceValue}>
-                Value:{' '}
-                {typeof item.value === 'object' ? JSON.stringify(item.value) : String(item.value)}
-              </Text>
-              {item.notes ? (
-                <Text style={styles.evidenceNotes}>Limitation: {item.notes}</Text>
-              ) : null}
-            </Card>
+            <EvidenceProvenanceCard key={idx} evidence={item} />
           ))}
           <PrimaryButton
             title="Back to Summary"

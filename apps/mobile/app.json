@@ -7,7 +7,7 @@
     "scheme": "sentinel",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "platforms": ["android", "ios"],
+    "platforms": ["android", "ios", "web"],
     "android": {
       "package": "com.sentinel.app",
       "permissions": ["android.permission.INTERNET", "android.permission.ACCESS_NETWORK_STATE"],

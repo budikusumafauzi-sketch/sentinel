@@ -17,11 +17,13 @@ export const SCAN_QUEUE = 'sentinel-scan';
             port: configService.get<number>('REDIS_PORT', 6379),
             maxRetriesPerRequest: null, // BullMQ requirement
             retryStrategy: (times: number) => {
-              if (times > 3) {
-                logger.warn('BullMQ Redis connection failed, queues unavailable');
-                return null;
+              const delay = Math.min(100 * Math.pow(1.5, Math.min(times, 8)), 3000);
+              if (times === 1 || times % 10 === 0) {
+                logger.warn(
+                  `BullMQ Redis connection lost; reconnecting in ${Math.round(delay)}ms (attempt ${times})`,
+                );
               }
-              return Math.min(times * 200, 2000);
+              return delay;
             },
           },
         };

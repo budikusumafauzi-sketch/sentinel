@@ -215,7 +215,7 @@ export function executeSecurityEngine(options: ExecuteEngineOptions): EngineExec
   );
 
   // 5. Generate Recommendations
-  const recommendations = generateRecommendations(reconciledFindings);
+  const recommendations = generateRecommendations(reconciledFindings, evaluationDate);
 
   // 6. Generate Non-Noisy Security Events
   const events = generateSecurityEvents(

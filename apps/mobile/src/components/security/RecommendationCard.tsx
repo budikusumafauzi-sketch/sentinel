@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, type ViewStyle } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, type ViewStyle } from 'react-native';
 import { colors } from '../../design-system/colors';
 import { radius } from '../../design-system/radius';
 import { spacing } from '../../design-system/spacing';
@@ -63,11 +63,15 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = ({
 
       {/* Sub-action */}
       {onViewAll && (
-        <View style={styles.viewAllWrapper}>
-          <Text style={styles.viewAllText} onPress={onViewAll}>
-            View All Recommendations
-          </Text>
-        </View>
+        <TouchableOpacity
+          style={styles.viewAllWrapper}
+          onPress={onViewAll}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="View All Recommendations"
+        >
+          <Text style={styles.viewAllText}>View All Recommendations</Text>
+        </TouchableOpacity>
       )}
     </Card>
   );

@@ -503,30 +503,12 @@ export const mockThreatAnalysis: ThreatAnalyzerResult = {
 
 export const mockDevices: ConnectedDevice[] = [
   {
-    id: 'dev-1',
-    name: 'ASUS ZenBook Pro (Workstation)',
-    platform: 'Windows',
-    model: 'Windows 11 Pro 23H2',
-    score: 91,
-    lastSeen: '2 min ago',
-    isCurrentDevice: true,
-  },
-  {
-    id: 'dev-2',
+    id: 'dev-pixel8pro',
     name: 'Google Pixel 8 Pro',
     platform: 'Android',
     model: 'Android 15 (Security Patch: Aug 2026)',
     score: 94,
-    lastSeen: '15 min ago',
-    isCurrentDevice: false,
-  },
-  {
-    id: 'dev-3',
-    name: 'iPad Pro 11"',
-    platform: 'iOS',
-    model: 'iPadOS 18.3',
-    score: 96,
-    lastSeen: '3 hours ago',
-    isCurrentDevice: false,
+    lastSeen: 'Just now',
+    isCurrentDevice: true,
   },
 ];

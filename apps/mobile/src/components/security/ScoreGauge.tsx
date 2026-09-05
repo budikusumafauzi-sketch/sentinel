@@ -14,27 +14,75 @@ interface ScoreGaugeProps {
 }
 
 export const ScoreGauge: React.FC<ScoreGaugeProps> = ({ scoreData, findingsSummary, style }) => {
-  const getScoreColor = (score: number): string => {
-    if (score >= 85) return colors.secure;
-    if (score >= 65) return colors.warning;
-    return colors.danger;
+  const getStatusTheme = (score: number) => {
+    if (score >= 85) {
+      return {
+        color: colors.secure,
+        bgColor: colors.secureBg,
+        borderColor: '#A7F3D0',
+        textColor: colors.secureDark,
+      };
+    }
+    if (score >= 65) {
+      return {
+        color: colors.warning,
+        bgColor: '#FEF3C7',
+        borderColor: '#FCD34D',
+        textColor: colors.warningDark,
+      };
+    }
+    return {
+      color: colors.danger,
+      bgColor: '#FEE2E2',
+      borderColor: '#FCA5A5',
+      textColor: colors.dangerDark,
+    };
   };
 
-  const scoreColor = getScoreColor(scoreData.score);
+  const statusTheme = getStatusTheme(scoreData.score);
 
   return (
-    <Card variant="elevated" padding="lg" style={[styles.card, style]}>
+    <Card
+      variant="elevated"
+      padding="lg"
+      style={[styles.card, style]}
+      accessibilityLabel={`Security Score: ${scoreData.score} out of 100. Status: ${scoreData.statusLabel}. ${scoreData.checksCompleted} checks completed.`}
+    >
       {/* Title */}
       <Text style={styles.cardHeaderTitle}>Security Score</Text>
 
-      {/* Circular Gauge Representation */}
-      <View style={styles.gaugeWrapper}>
-        <View style={[styles.outerRing, { borderColor: scoreColor }]}>
+      {/* Circular Gauge Representation - Score Number is the Uncluttered Focal Point */}
+      <View
+        style={styles.gaugeWrapper}
+        accessibilityRole="progressbar"
+        accessibilityValue={{ min: 0, max: 100, now: scoreData.score }}
+      >
+        <View style={[styles.outerRing, { borderColor: statusTheme.color }]}>
           <View style={styles.innerRing}>
             <Text style={styles.scoreNumber}>{scoreData.score}</Text>
-            <Text style={[styles.scoreStatus, { color: scoreColor }]}>{scoreData.statusLabel}</Text>
+            <Text style={styles.scoreScale}>/ 100</Text>
           </View>
         </View>
+      </View>
+
+      {/* Dedicated Prominent Status Badge — Solves Overlap Defect cleanly */}
+      <View
+        style={[
+          styles.statusBadge,
+          {
+            backgroundColor: statusTheme.bgColor,
+            borderColor: statusTheme.borderColor,
+          },
+        ]}
+      >
+        <View style={[styles.statusDot, { backgroundColor: statusTheme.textColor }]} />
+        <Text
+          style={[styles.statusBadgeText, { color: statusTheme.textColor }]}
+          numberOfLines={1}
+          ellipsizeMode="tail"
+        >
+          {scoreData.statusLabel}
+        </Text>
       </View>
 
       {/* Delta Label */}
@@ -43,7 +91,11 @@ export const ScoreGauge: React.FC<ScoreGaugeProps> = ({ scoreData, findingsSumma
       </View>
 
       {/* Severity Counters Row */}
-      <View style={styles.severityRow}>
+      <View
+        style={styles.severityRow}
+        accessible={true}
+        accessibilityLabel={`Findings breakdown: ${findingsSummary.critical} critical, ${findingsSummary.high} high, ${findingsSummary.medium} medium, ${findingsSummary.low} low`}
+      >
         <View style={styles.severityItem}>
           <Text style={[styles.severityCount, { color: severityColors.critical.dark }]}>
             {findingsSummary.critical}
@@ -106,13 +158,13 @@ const styles = StyleSheet.create({
   gaugeWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: spacing.sm,
+    marginVertical: spacing.xs,
   },
   outerRing: {
-    width: 148,
-    height: 148,
-    borderRadius: 74,
-    borderWidth: 7,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    borderWidth: 8,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.surface,
@@ -122,28 +174,50 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   scoreNumber: {
-    fontSize: fontSizes.display,
+    fontSize: 48,
     fontWeight: fontWeights.heavy,
     color: colors.textPrimary,
-    lineHeight: 50,
+    lineHeight: 52,
   },
-  scoreStatus: {
+  scoreScale: {
     fontSize: fontSizes.xs,
+    fontWeight: fontWeights.medium,
+    color: colors.textMuted,
+    marginTop: -2,
+    letterSpacing: 0.5,
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    marginTop: spacing.md,
+    maxWidth: '90%',
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: spacing.xs + 2,
+  },
+  statusBadgeText: {
+    fontSize: fontSizes.sm,
     fontWeight: fontWeights.bold,
-    letterSpacing: 1.5,
-    marginTop: 2,
+    letterSpacing: 0.3,
   },
   deltaContainer: {
-    marginTop: spacing.sm,
+    marginTop: spacing.xs + 2,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: radius.full,
-    backgroundColor: colors.secureBg,
+    backgroundColor: colors.surfaceMuted,
   },
   deltaText: {
     fontSize: fontSizes.xs,
-    fontWeight: fontWeights.semibold,
-    color: colors.secureDark,
+    fontWeight: fontWeights.medium,
+    color: colors.textSecondary,
   },
   severityRow: {
     flexDirection: 'row',

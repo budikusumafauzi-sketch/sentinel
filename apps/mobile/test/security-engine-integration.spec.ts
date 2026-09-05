@@ -70,8 +70,8 @@ describe('Sentinel Phase 5: Mobile Security Engine Integration', () => {
             capabilityStatus: 'SUPPORTED',
             source: 'KeyguardManager.isDeviceSecure()',
             category: 'SYSTEM',
-            confidence: 1.0,
-            evaluatedAt: new Date().toISOString(),
+            platform: 'ANDROID',
+            timestamp: new Date().toISOString(),
           },
           {
             checkId: 'security.storage_encryption',
@@ -81,8 +81,8 @@ describe('Sentinel Phase 5: Mobile Security Engine Integration', () => {
             capabilityStatus: 'SUPPORTED',
             source: 'DevicePolicyManager.getStorageEncryptionStatus()',
             category: 'SYSTEM',
-            confidence: 1.0,
-            evaluatedAt: new Date().toISOString(),
+            platform: 'ANDROID',
+            timestamp: new Date().toISOString(),
           },
         ],
       });

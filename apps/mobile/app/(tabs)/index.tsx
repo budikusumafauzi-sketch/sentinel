@@ -59,7 +59,7 @@ export default function OverviewScreen() {
           status: report.findings.some(
             (f) => f.ruleId === 'SEC-SYS-STORAGE-ENCRYPTION' && f.status === 'ACTIVE',
           )
-            ? 'critical'
+            ? 'risk'
             : 'secure',
           statusLabel: report.findings.some(
             (f) => f.ruleId === 'SEC-SYS-STORAGE-ENCRYPTION' && f.status === 'ACTIVE',
@@ -103,28 +103,28 @@ export default function OverviewScreen() {
         {
           id: 'ctrl-lock',
           name: 'Screen Lock & Keyguard',
-          status: 'neutral',
+          status: 'pending',
           statusLabel: 'Pending Scan',
           lastChecked: 'Not checked',
         },
         {
           id: 'ctrl-enc',
           name: 'Device Storage Encryption',
-          status: 'neutral',
+          status: 'pending',
           statusLabel: 'Pending Scan',
           lastChecked: 'Not checked',
         },
         {
           id: 'ctrl-patch',
           name: 'OS Security Patch Level',
-          status: 'neutral',
+          status: 'pending',
           statusLabel: 'Pending Scan',
           lastChecked: 'Not checked',
         },
         {
           id: 'ctrl-adb',
           name: 'USB Debugging (ADB)',
-          status: 'neutral',
+          status: 'pending',
           statusLabel: 'Pending Scan',
           lastChecked: 'Not checked',
         },

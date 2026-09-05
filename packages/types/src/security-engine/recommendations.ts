@@ -13,12 +13,17 @@ import type { EngineFinding, EngineRecommendation } from './types';
 /**
  * Generates actionable recommendations directly from engine findings.
  */
-export function generateRecommendations(findings: EngineFinding[]): EngineRecommendation[] {
+export function generateRecommendations(
+  findings: EngineFinding[],
+  evaluationDate?: Date,
+): EngineRecommendation[] {
   const recommendations: EngineRecommendation[] = [];
   const seenFingerprints = new Set<string>();
 
   // Prioritize critical and high findings first
   const sortedFindings = [...findings].sort((a, b) => b.riskScore - a.riskScore);
+
+  const createdAt = (evaluationDate ?? new Date()).toISOString();
 
   for (const f of sortedFindings) {
     if (seenFingerprints.has(f.fingerprint)) {
@@ -37,7 +42,7 @@ export function generateRecommendations(findings: EngineFinding[]): EngineRecomm
       description: f.recommendationText || f.description,
       priority: f.priority,
       status: isResolved ? 'COMPLETED' : 'PENDING',
-      createdAt: new Date().toISOString(),
+      createdAt,
     });
   }
 

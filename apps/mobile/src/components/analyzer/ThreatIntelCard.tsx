@@ -8,6 +8,7 @@ import { Card } from '../common/Card';
 import { SeverityBadge } from '../common/Badge';
 import { Icon } from '../common/Icon';
 import type { ThreatIntelResult, ThreatSeverity } from '@sentinel/types';
+import type { SeverityLevel } from '../../types/ui';
 
 interface ThreatIntelCardProps {
   result: ThreatIntelResult;
@@ -19,18 +20,16 @@ export const ThreatIntelCard: React.FC<ThreatIntelCardProps> = ({ result, onRefr
   const [showEvidence, setShowEvidence] = useState(false);
 
   // Map verdict to severity colors
-  const severityKey: ThreatSeverity =
+  const severityKey: SeverityLevel =
     result.verdict === 'MALICIOUS'
       ? result.severity === 'CRITICAL'
-        ? 'CRITICAL'
-        : 'HIGH'
+        ? 'critical'
+        : 'high'
       : result.verdict === 'SUSPICIOUS'
-        ? 'MEDIUM'
-        : result.verdict === 'CLEAN'
-          ? 'LOW'
-          : 'INFO';
+        ? 'medium'
+        : 'low';
 
-  const theme = severityColors[severityKey] || severityColors.INFO;
+  const theme = severityColors[severityKey];
 
   const isUnavailable = result.verdict === 'UNAVAILABLE';
   const isUnknown = result.verdict === 'UNKNOWN';
@@ -66,7 +65,7 @@ export const ThreatIntelCard: React.FC<ThreatIntelCardProps> = ({ result, onRefr
 
       {/* Indicator & Verdict Banner */}
       <View
-        style={[styles.verdictBanner, { backgroundColor: theme.light, borderColor: theme.border }]}
+        style={[styles.verdictBanner, { backgroundColor: theme.bg, borderColor: theme.border }]}
       >
         <View style={styles.verdictRow}>
           <Text style={styles.verdictLabel}>VERDICT:</Text>
@@ -212,7 +211,7 @@ const styles = StyleSheet.create({
   sourceName: {
     fontSize: fontSizes.sm,
     fontWeight: fontWeights.semibold,
-    color: colors.text,
+    color: colors.textPrimary,
     marginTop: 2,
   },
   badgeRow: {
@@ -270,7 +269,7 @@ const styles = StyleSheet.create({
   },
   indicatorText: {
     fontSize: fontSizes.sm,
-    color: colors.text,
+    color: colors.textPrimary,
     fontFamily: 'monospace',
   },
   metricsRow: {
@@ -293,7 +292,7 @@ const styles = StyleSheet.create({
   metricValue: {
     fontSize: fontSizes.sm,
     fontWeight: fontWeights.bold,
-    color: colors.text,
+    color: colors.textPrimary,
   },
   metricDivider: {
     width: 1,
@@ -302,7 +301,7 @@ const styles = StyleSheet.create({
   },
   summaryText: {
     fontSize: fontSizes.sm,
-    color: colors.text,
+    color: colors.textPrimary,
     lineHeight: 20,
     marginBottom: spacing.sm,
   },
@@ -380,7 +379,7 @@ const styles = StyleSheet.create({
   },
   evidenceVal: {
     fontSize: fontSizes.xs,
-    color: colors.text,
+    color: colors.textPrimary,
     flex: 1,
     fontFamily: 'monospace',
   },

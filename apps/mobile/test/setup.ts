@@ -44,6 +44,19 @@ const mockRN = {
     const ReactModule = require('react');
     return ReactModule.createElement('ActivityIndicator', props, props.children);
   },
+  Image: (props: { children?: React.ReactNode }) => {
+    const ReactModule = require('react');
+    return ReactModule.createElement('Image', props, props.children);
+  },
+  Modal: (props: { children?: React.ReactNode; visible?: boolean }) => {
+    const ReactModule = require('react');
+    if (props.visible === false) return null;
+    return ReactModule.createElement('View', props, props.children);
+  },
+  Switch: (props: Record<string, unknown>) => {
+    const ReactModule = require('react');
+    return ReactModule.createElement('View', props);
+  },
 };
 
 jest.mock('react-native', () => mockRN);
@@ -90,4 +103,21 @@ jest.mock('expo-status-bar', () => {
 jest.mock('expo-modules-core', () => ({
   requireOptionalNativeModule: jest.fn(() => null),
   requireNativeModule: jest.fn(() => null),
+}));
+
+// Mock expo-image-picker
+jest.mock('expo-image-picker', () => ({
+  launchImageLibraryAsync: jest.fn().mockResolvedValue({
+    canceled: false,
+    assets: [
+      {
+        uri: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+        base64:
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+        mimeType: 'image/png',
+        fileName: 'test-screenshot.png',
+        fileSize: 1024,
+      },
+    ],
+  }),
 }));

@@ -222,6 +222,8 @@ export const FindingCard: React.FC<FindingCardProps> = ({ finding, onTakeAction,
               style={styles.actionButton}
               onPress={() => onTakeAction(finding)}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={`Take action on finding: ${finding.title}`}
             >
               <Text style={styles.actionButtonText}>Take Action on Finding</Text>
             </TouchableOpacity>
