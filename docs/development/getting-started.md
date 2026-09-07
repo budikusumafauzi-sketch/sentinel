@@ -1,77 +1,147 @@
-# Getting Started
+# Getting Started with Sentinel
+
+This guide walks through setting up your local environment for Sentinel development across the backend, mobile, and native Windows desktop agent workspaces.
+
+---
 
 ## Prerequisites
 
-| Tool           | Minimum Version | Purpose            |
-| -------------- | --------------- | ------------------ |
-| Node.js        | 22+             | Runtime            |
-| pnpm           | 11+             | Package manager    |
-| Git            | 2.x             | Version control    |
-| Android Studio | Latest          | Mobile development |
-| JDK            | 17+             | Android builds     |
+| Tool                         | Minimum Version          | Required For                                             |
+| :--------------------------- | :----------------------- | :------------------------------------------------------- |
+| **Node.js**                  | `>= 22.0.0`              | Backend API, tooling, and mobile Metro bundler           |
+| **pnpm**                     | `11.25.0`                | Workspace package management (`npm i -g pnpm@11.25.0`)   |
+| **Git**                      | `2.x`                    | Source control                                           |
+| **Docker & Docker Compose**  | Latest                   | Local PostgreSQL 16 and Redis 7 services                 |
+| **Rust & Cargo**             | `Edition 2021` (`1.75+`) | Windows Desktop Agent (`apps/desktop`)                   |
+| **Android Studio & SDK 34+** | API 34+ (JDK 17)         | Native Android mobile app builds (optional for Web mode) |
 
-## Initial Setup
+---
 
-1. **Clone the repository**
+## Step-by-Step Initial Setup
 
-   ```bash
-   git clone <repository-url>
-   cd sentinel
-   ```
-
-2. **Install dependencies**
-
-   ```bash
-   pnpm install
-   ```
-
-3. **Set up environment variables**
-
-   ```bash
-   cp .env.example .env
-   cp apps/backend/.env.example apps/backend/.env
-   ```
-
-   Edit `.env` files with your local configuration. Never commit real secrets.
-
-4. **Build all packages**
-   ```bash
-   pnpm build
-   ```
-
-## Running the Backend
+### 1. Clone the Repository
 
 ```bash
-# Development mode (with watch)
-pnpm --filter @sentinel/backend dev
-
-# The API starts at http://localhost:3000
-# Swagger docs at http://localhost:3000/api/docs
-# Health check at http://localhost:3000/api/v1/health
+git clone https://github.com/budikusumafauzi-sketch/sentinel.git
+cd sentinel
 ```
 
-## Running the Mobile App
+### 2. Install Dependencies
+
+Install frozen dependencies across the Turborepo monorepo:
 
 ```bash
-# Start Expo dev server
-pnpm --filter @sentinel/mobile dev
+pnpm install --frozen-lockfile
+```
 
-# Run on Android
+### 3. Configure Environment Variables
+
+Create your local `.env` files from the provided templates:
+
+```bash
+# Root environment file
+cp .env.example .env
+
+# Backend environment file
+cp apps/backend/.env.example apps/backend/.env
+```
+
+> [!TIP]
+> The default values in `apps/backend/.env.example` are pre-configured to match the local Docker infrastructure defined in `docker-compose.yml`.
+
+### 4. Launch Local Infrastructure
+
+Start PostgreSQL 16 (port `5433`) and Redis 7 (port `6379`):
+
+```bash
+docker compose up -d
+```
+
+Verify containers are running:
+
+```bash
+docker compose ps
+```
+
+### 5. Run Database Migrations
+
+Apply Prisma SQL migrations to your local PostgreSQL instance:
+
+```bash
+pnpm --filter @sentinel/backend prisma migrate dev
+```
+
+### 6. Build Monorepo Packages
+
+Compile TypeScript contracts, backend build artifacts, and desktop binaries:
+
+```bash
+pnpm build
+```
+
+---
+
+## Running Applications
+
+### Backend API (`apps/backend`)
+
+```bash
+pnpm --filter @sentinel/backend dev
+```
+
+- **API Server:** `http://localhost:3000`
+- **OpenAPI / Swagger UI:** `http://localhost:3000/api/docs`
+- **Health Check:** `http://localhost:3000/api/v1/health`
+
+### Mobile Client (`apps/mobile`)
+
+#### Web Mode (Fast Browser Development)
+
+```bash
+pnpm --filter @sentinel/mobile dev
+```
+
+Press `w` in the terminal to open the application in your default web browser via Expo Web / Metro.
+
+#### Native Android (Emulator or Connected Device)
+
+```bash
+# Ensure an Android emulator is running (e.g., Pixel 8a API 34) or a device is connected via ADB:
+adb devices
+
+# Launch Android development build:
 pnpm --filter @sentinel/mobile android
 ```
 
-Ensure an Android emulator is running or a device is connected via ADB.
+### Windows Desktop Agent (`apps/desktop`)
 
-## Common Commands
+The Windows Desktop Agent is a standalone Rust binary that communicates with the Sentinel backend and serves a local UI over loopback:
 
-| Command             | Description                        |
-| ------------------- | ---------------------------------- |
-| `pnpm build`        | Build all packages                 |
-| `pnpm lint`         | Run linting across all packages    |
-| `pnpm test`         | Run tests across all packages      |
-| `pnpm format`       | Format all files with Prettier     |
-| `pnpm format:check` | Check formatting without modifying |
+```bash
+# Run in development mode
+cargo run --manifest-path apps/desktop/Cargo.toml
 
-## Project Structure
+# The desktop agent serves its embedded UI at http://127.0.0.1:8765
+```
 
-See the [Architecture Overview](../architecture/overview.md) for detailed structure documentation.
+---
+
+## Common Development Commands
+
+| Command             | Description                                              |
+| :------------------ | :------------------------------------------------------- |
+| `pnpm build`        | Compile all workspaces through Turborepo pipeline        |
+| `pnpm dev`          | Run all workspace dev servers concurrently               |
+| `pnpm lint`         | Execute ESLint across all TypeScript packages            |
+| `pnpm test`         | Run all automated test suites (Backend, Mobile, Desktop) |
+| `pnpm format`       | Auto-format all code files using Prettier                |
+| `pnpm format:check` | Verify formatting without making changes                 |
+| `pnpm clean`        | Clean all build artifacts, `.turbo`, and caches          |
+
+---
+
+## Next Steps
+
+- **Architecture Deep Dive:** Read [Architecture Overview](../architecture/overview.md) and [docs/SENTINEL_PROJECT_MASTER_DOCUMENTATION.md](../SENTINEL_PROJECT_MASTER_DOCUMENTATION.md).
+- **Testing Guidelines:** Refer to the [Testing Guide](testing.md).
+- **Security Principles:** Review the [Security Conventions](../security/conventions.md).
